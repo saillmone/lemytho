@@ -1,0 +1,25 @@
+# Gradle
+.gradle/
+.kotlin/
+build/
+
+# Fichiers locaux spécifiques à chaque machine
+local.properties
+
+# Android Studio / IntelliJ
+.idea/
+*.iml
+.DS_Store
+
+# Sorties de build du module app
+/app/build/
+captures/
+.externalNativeBuild/
+.cxx/
+
+# Keystores (ne jamais versionner les clés)
+*.jks
+*.keystore
+
+# OS
+Thumbs.db

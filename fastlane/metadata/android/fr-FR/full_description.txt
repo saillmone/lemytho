@@ -1,0 +1,19 @@
+OpenCover est un jeu de société de rôles cachés à jouer entre amis, sur un seul téléphone que l'on se passe.
+
+Chaque joueur reçoit secrètement un rôle :
+- <b>Civil</b> : il connaît le mot secret et doit démasquer les intrus.
+- <b>Infiltré</b> : il connaît un mot proche mais différent, et doit se fondre dans la masse.
+- <b>Mr White</b> : il ne connaît aucun mot et doit bluffer pour survivre.
+
+Déroulement d'une manche :
+1. Chacun révèle son rôle en secret.
+2. Les joueurs donnent un indice à tour de rôle, dans un ordre déterminé au hasard.
+3. Discussion, puis vote pour éliminer l'intrus présumé.
+4. Le rôle du joueur éliminé est révélé, et la manche continue jusqu'à la victoire.
+
+Points forts :
+- Hors-ligne, aucun compte ni connexion requis.
+- 3 à 20 joueurs, de nombreuses catégories de mots.
+- Scores cumulés sur plusieurs manches.
+- Interface sombre et illustrations cartoon.
+- 100 % open source (GPLv3), sans publicité ni traceur.
