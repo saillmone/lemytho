@@ -15,9 +15,10 @@ réussi de l'application. Suis les étapes dans l'ordre.
 3. Ouvrir le projet et synchroniser Gradle
 4. Créer un émulateur (AVD)
 5. Compiler l'APK en ligne de commande
-6. Premier commit + premier push (Git)
-7. Dépannage
-8. Versions utilisées par le projet
+6. Serveur relais (multijoueur)
+7. Premier commit + premier push (Git)
+8. Dépannage
+9. Versions utilisées par le projet
 
 ---
 
@@ -116,7 +117,72 @@ Ouvre un terminal **dans le dossier `opencover`**, puis tape (Windows) :
 
 ---
 
-## 6. Premier commit + premier push (Git)
+## 6. Serveur relais (multijoueur)
+
+Le mode multijoueur repose sur un **serveur relais** (Node.js + Socket.IO) qui ne fait que
+transporter les messages entre les appareils. Aucune logique de jeu ne tourne côté serveur :
+c'est l'hôte qui mène la partie.
+
+### 6.1. Prérequis
+
+Installe **Node.js 20 LTS** (ou plus récent) depuis <https://nodejs.org> (l'installateur ajoute
+`npm`).
+
+### 6.2. Lancer le serveur en local
+
+Dans un terminal, depuis le dossier `server/` :
+
+```powershell
+npm install
+npm run dev
+```
+
+Le serveur écoute sur `http://localhost:3000`.
+
+### 6.3. Adresse du serveur dans l'application
+
+L'URL du serveur est compilée dans l'APK via `BuildConfig.SERVER_URL` (définie dans
+`app/build.gradle.kts`). Valeur par défaut :
+
+- **émulateur Android** : `http://10.0.2.2:3000` (alias du `localhost` de la machine hôte) ;
+- **téléphone physique** : l'IP locale de la machine, ex. `http://192.168.1.20:3000`.
+
+Tu peux aussi la modifier à la volée dans l'écran « Multijoueur » de l'app.
+
+> En développement, les connexions non chiffrées (HTTP) sont autorisées
+> (`android:usesCleartextTraffic="true"` dans le manifeste). En production, on passe par
+> **HTTPS/WSS** via le reverse proxy Caddy (voir ci-dessous).
+
+### 6.4. Déploiement en production (VPS + Docker + Caddy)
+
+À la racine du projet, un `docker-compose.yml` orchestre :
+
+- `server` : le serveur relais (image Node.js) ;
+- `caddy` : reverse proxy qui fournit automatiquement le **HTTPS** et le **WSS**
+  (nécessaires pour un téléphone connecté en 4G/5G).
+
+```powershell
+# À la racine du projet, avec Docker installé
+$env:OPENCOVER_DOMAIN = "opencover.example.com"
+docker compose up -d --build
+```
+
+Le domaine doit pointer vers l'IP du VPS (enregistrement DNS `A`). Caddy obtient le certificat
+Let's Encrypt tout seul. L'app doit alors être configurée avec l'URL
+`https://opencover.example.com`.
+
+### 6.5. Tester le multijoueur
+
+Le test multi-appareils nécessite deux appareils (ou un émulateur + un téléphone) :
+
+1. L'hôte crée une partie : l'écran affiche un **code de salon** (4 lettres).
+2. Les invités rejoignent avec ce code.
+3. L'hôte choisit la catégorie et lance la partie.
+4. Chaque joueur voit son rôle/mot sur son propre écran, puis vote depuis son appareil.
+
+---
+
+## 7. Premier commit + premier push (Git)
 
 Les commandes ci-dessous initialisent le dépôt et poussent le code vers GitHub.
 
@@ -134,7 +200,7 @@ git push -u origin main
 
 ---
 
-## 7. Dépannage
+## 8. Dépannage
 
 | Problème | Solution |
 | --- | --- |
@@ -146,7 +212,7 @@ git push -u origin main
 
 ---
 
-## 8. Versions utilisées par le projet
+## 9. Versions utilisées par le projet
 
 | Outil / librairie | Version |
 | --- | --- |

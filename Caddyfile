@@ -1,0 +1,5 @@
+# Reverse proxy OpenCover : HTTPS + WSS générés automatiquement.
+# La variable OPENCOVER_DOMAIN est injectée par docker-compose.
+{$OPENCOVER_DOMAIN} {
+	reverse_proxy server:3000
+}
