@@ -42,6 +42,8 @@ fun GameBoardScreen(
     votePhase: VotePhase,
     currentVoter: Player?,
     tiedCandidates: Set<Int>,
+    selfVote: Boolean = false,
+    selfId: Int? = null,
     onStartVote: () -> Unit,
     onCastVote: (Int) -> Unit
 ) {
@@ -96,8 +98,13 @@ fun GameBoardScreen(
 
             Spacer(Modifier.height(16.dp))
 
+            val statusText = when (votePhase) {
+                VotePhase.IDLE -> "Donnez vos indices dans l'ordre, discutez… puis votez !"
+                VotePhase.SECOND_ROUND -> "Égalité : re-vote pour départager."
+                VotePhase.VOTING -> "Vote en cours…"
+            }
             ScrimText(
-                text = "Donnez vos indices dans l'ordre, discutez… puis votez !",
+                text = statusText,
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.Bold
             )
@@ -111,7 +118,7 @@ fun GameBoardScreen(
                 modifier = Modifier.weight(1f)
             ) {
                 items(orderedPlayers, key = { it.id }) { player ->
-                    PlayerCard(player, order = rankById[player.id])
+                    PlayerCard(player, order = rankById[player.id], selfId = selfId)
                 }
             }
 
@@ -137,14 +144,20 @@ fun GameBoardScreen(
             currentVoter = currentVoter,
             targets = targets,
             isSecondRound = votePhase == VotePhase.SECOND_ROUND,
+            isSelf = selfVote,
             onCastVote = onCastVote
         )
     }
 }
 
 @Composable
-private fun PlayerCard(player: Player, order: Int? = null) {
+private fun PlayerCard(player: Player, order: Int? = null, selfId: Int? = null) {
     val eliminated = player.status == PlayerStatus.ELIMINATED
+    val label = buildString {
+        if (order != null) append("$order. ")
+        append(player.pseudo)
+        if (player.id == selfId) append(" (toi)")
+    }
     Surface(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(12.dp),
@@ -156,7 +169,7 @@ private fun PlayerCard(player: Player, order: Int? = null) {
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Text(
-                text = if (order != null) "$order. ${player.pseudo}" else player.pseudo,
+                text = label,
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.Bold,
                 color = if (eliminated) MaterialTheme.colorScheme.onSurfaceVariant

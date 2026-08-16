@@ -1,4 +1,6 @@
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
+import java.io.FileInputStream
+import java.util.Properties
 
 plugins {
     alias(libs.plugins.android.application)
@@ -7,9 +9,30 @@ plugins {
     alias(libs.plugins.ksp)
 }
 
+val keystoreProperties = Properties()
+val keystorePropertiesFile = rootProject.file("keystore.properties")
+if (keystorePropertiesFile.exists()) {
+    FileInputStream(keystorePropertiesFile).use { keystoreProperties.load(it) }
+}
+
+// URL du serveur multijoueur. Surchargeable au build :
+//   ./gradlew assembleDebug -Popencover.serverUrl=http://192.168.1.10:3000
+val serverUrl = (project.findProperty("opencover.serverUrl") as String?) ?: "http://10.0.2.2:3000"
+
 android {
     namespace = "com.opencover.app"
     compileSdk = 35
+
+    signingConfigs {
+        if (keystorePropertiesFile.exists()) {
+            create("release") {
+                storeFile = rootProject.file(keystoreProperties["storeFile"] as String)
+                storePassword = keystoreProperties["storePassword"] as String
+                keyAlias = keystoreProperties["keyAlias"] as String
+                keyPassword = keystoreProperties["keyPassword"] as String
+            }
+        }
+    }
 
     defaultConfig {
         applicationId = "com.opencover.app"
@@ -17,11 +40,15 @@ android {
         targetSdk = 35
         versionCode = 1
         versionName = "0.1.0"
+        buildConfigField("String", "SERVER_URL", "\"$serverUrl\"")
     }
 
     buildTypes {
         release {
             isMinifyEnabled = true
+            if (keystorePropertiesFile.exists()) {
+                signingConfig = signingConfigs.getByName("release")
+            }
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
@@ -36,6 +63,7 @@ android {
 
     buildFeatures {
         compose = true
+        buildConfig = true
     }
 }
 
@@ -69,8 +97,16 @@ dependencies {
     // Coroutines
     implementation(libs.kotlinx.coroutines.android)
 
+    // Multijoueur temps réel (Socket.IO, licence MIT, compatible F-Droid)
+    implementation(libs.socket.io.client) {
+        // org.json est fourni par Android : on exclut la copie embarquée.
+        exclude(group = "org.json", module = "json")
+    }
+
     // Tests unitaires
     testImplementation(libs.junit)
+    // org.json est fourni par Android à l'exécution, mais absent en test JVM.
+    testImplementation(libs.json)
 
     // Tooling Compose (uniquement en debug)
     debugImplementation(libs.androidx.compose.ui.tooling)

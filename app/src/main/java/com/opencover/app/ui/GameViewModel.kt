@@ -11,6 +11,11 @@ import com.opencover.app.di.AppContainer
 import com.opencover.app.engine.GameEngine
 import com.opencover.app.engine.Victory
 import com.opencover.app.engine.VoteOutcome
+import com.opencover.app.net.ConnectionManager
+import com.opencover.app.net.HostSession
+import com.opencover.app.net.LobbyMember
+import com.opencover.app.net.Protocol
+import com.opencover.app.net.ServerEvent
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -19,16 +24,27 @@ import kotlinx.coroutines.launch
 
 class GameViewModel(
     private val gameEngine: GameEngine,
-    private val wordRepository: WordRepository
+    private val wordRepository: WordRepository,
+    private val connectionManager: ConnectionManager
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(GameUiState())
     val uiState: StateFlow<GameUiState> = _uiState.asStateFlow()
 
+    /** Session de diffusion vers les invités (null en jeu local). */
+    private var hostSession: HostSession? = null
+
     init {
         viewModelScope.launch {
             wordRepository.getCategories().collect { categories ->
                 _uiState.update { it.copy(categories = categories) }
+            }
+        }
+        viewModelScope.launch {
+            connectionManager.events.collect { event ->
+                if (event is ServerEvent.GameEvent) {
+                    handleGuestEvent(event)
+                }
             }
         }
     }
@@ -159,13 +175,24 @@ class GameViewModel(
             if (state.result != null || state.votePhase != VotePhase.IDLE) return@update state
             val active = activePlayers(state)
             if (active.size < 2) return@update state
-            state.copy(
-                votePhase = VotePhase.VOTING,
-                voteOrder = active.map { it.id },
-                currentVoterIndex = 0,
-                votes = emptyMap(),
-                tiedCandidates = emptySet()
-            )
+            if (state.multiplayerHost) {
+                val newState = state.copy(
+                    votePhase = VotePhase.VOTING,
+                    votes = emptyMap(),
+                    tiedCandidates = emptySet()
+                )
+                broadcastBoard(newState)
+                hostSession?.sendPhase(Protocol.PHASE_VOTE)
+                newState
+            } else {
+                state.copy(
+                    votePhase = VotePhase.VOTING,
+                    voteOrder = active.map { it.id },
+                    currentVoterIndex = 0,
+                    votes = emptyMap(),
+                    tiedCandidates = emptySet()
+                )
+            }
         }
     }
 
@@ -245,20 +272,26 @@ class GameViewModel(
     // --- Ultime tentative de Mr White ---
 
     fun resolveMrWhiteGuess(validated: Boolean) {
-        _uiState.update { state ->
-            val mrWhiteId = state.pendingMrWhiteGuess ?: return@update state
-            val base = state.copy(pendingMrWhiteGuess = null)
-            if (validated) {
-                val victory = Victory.MrWhite(setOf(mrWhiteId), byGuess = true)
-                val roundScores = gameEngine.computeScores(state.players, victory)
-                base.copy(
-                    result = victory,
-                    finalScores = roundScores,
-                    totalScores = accumulateScores(state.totalScores, roundScores)
-                )
-            } else {
-                finalizeVictory(base)
-            }
+        val state = _uiState.value
+        val mrWhiteId = state.pendingMrWhiteGuess ?: return
+        val base = state.copy(pendingMrWhiteGuess = null)
+        val resolved = if (validated) {
+            val victory = Victory.MrWhite(setOf(mrWhiteId), byGuess = true)
+            val roundScores = gameEngine.computeScores(state.players, victory)
+            base.copy(
+                result = victory,
+                finalScores = roundScores,
+                totalScores = accumulateScores(state.totalScores, roundScores)
+            )
+        } else {
+            finalizeVictory(base)
+        }
+        _uiState.value = resolved
+        // Cas Mr White : le résultat n'est connu qu'après la résolution de la
+        // devinette. On le diffuse ici (l'écran d'élimination est déjà affiché).
+        if (resolved.multiplayerHost && resolved.result != null) {
+            hostSession?.sendResult(resolved.players, resolved.result, resolved.totalScores)
+            hostSession?.sendPhase(Protocol.PHASE_RESULT)
         }
     }
 
@@ -280,10 +313,17 @@ class GameViewModel(
     /** Quitte l'écran d'élimination : retour au plateau (ou aux résultats si la partie est finie). */
     fun continueAfterElimination() {
         _uiState.update { state ->
-            state.copy(
+            val next = state.copy(
                 elimination = null,
                 currentScreen = Screen.GameBoard
             )
+            // Le résultat final est déjà diffusé (broadcastResolved) : ici on ne
+            // synchronise que la reprise du jeu (tour suivant) pour les invités.
+            if (state.multiplayerHost && state.result == null) {
+                broadcastBoard(next)
+                hostSession?.sendPhase(Protocol.PHASE_CLUE)
+            }
+            next
         }
     }
 
@@ -296,7 +336,174 @@ class GameViewModel(
         return merged
     }
 
+    // --- Multijoueur : hôte autoritaire ---
+
+    fun startHostGame(members: List<LobbyMember>, category: String?, threePlayerIsMrWhite: Boolean) {
+        viewModelScope.launch {
+            val state = _uiState.value
+            val isReplay = hostSession != null
+            val playing = members.filter { it.ready || it.isHost }
+            if (playing.size < 3) return@launch
+            val wordPair = wordRepository.getRandomPair(category) ?: return@launch
+            val roles = gameEngine.assignRoles(playing.size, threePlayerIsMrWhite)
+            val players = playing.mapIndexed { index, member ->
+                Player(id = member.playerId, pseudo = member.pseudo, role = roles[index], assignedWord = "")
+            }
+            val withWords = gameEngine.assignWords(players, wordPair)
+            val session = hostSession ?: HostSession(connectionManager)
+            hostSession = session
+            session.sendStart(wordPair.category)
+            withWords.forEach { player ->
+                session.sendPrivate(player.id, player.role, player.assignedWord)
+            }
+            connectionManager.notifyGameStarted()
+            _uiState.update { st ->
+                st.copy(
+                    players = withWords,
+                    wordPair = wordPair,
+                    revealIndex = 0,
+                    roundNumber = if (isReplay) st.roundNumber + 1 else 1,
+                    turnNumber = 1,
+                    clueOrder = emptyList(),
+                    votePhase = VotePhase.IDLE,
+                    votes = emptyMap(),
+                    tiedCandidates = emptySet(),
+                    elimination = null,
+                    pendingMrWhiteGuess = null,
+                    result = null,
+                    finalScores = emptyMap(),
+                    totalScores = if (isReplay) st.totalScores else emptyMap(),
+                    multiplayerHost = true,
+                    revealAcks = emptySet(),
+                    selectedCategory = category,
+                    currentScreen = Screen.Reveal
+                )
+            }
+        }
+    }
+
+    /** L'hôte a vu son rôle : enregistre son ack et attend les invités. */
+    fun hostRevealDone() {
+        _uiState.update { state ->
+            if (!state.multiplayerHost) return@update state
+            onHostAck(state, Protocol.HOST_PLAYER_ID)
+        }
+    }
+
+    /** L'hôte vote depuis son propre appareil. */
+    fun hostCastVote(targetId: Int) {
+        _uiState.update { state ->
+            if (!state.multiplayerHost) return@update state
+            registerHostVote(state, Protocol.HOST_PLAYER_ID, targetId)
+        }
+    }
+
+    /** L'hôte retourne au salon après une manche (il s'est déclaré prêt). */
+    fun hostReturnToLobby() {
+        _uiState.update { state ->
+            state.copy(
+                currentScreen = Screen.Multiplayer,
+                multiplayerHost = false
+            )
+        }
+    }
+
+    // --- Entrées des invités (routées vers la logique hôte) ---
+
+    private fun handleGuestEvent(event: ServerEvent.GameEvent) {
+        when (event.name) {
+            Protocol.EVENT_PLAYER_REVEAL -> onGuestReveal(event.data.optInt("playerId"))
+            Protocol.EVENT_PLAYER_VOTE -> onGuestVote(event.data.optInt("playerId"), event.data.optInt("targetId"))
+        }
+    }
+
+    private fun onGuestReveal(playerId: Int) {
+        _uiState.update { state ->
+            if (!state.multiplayerHost) return@update state
+            onHostAck(state, playerId)
+        }
+    }
+
+    private fun onGuestVote(playerId: Int, targetId: Int) {
+        _uiState.update { state ->
+            if (!state.multiplayerHost) return@update state
+            registerHostVote(state, playerId, targetId)
+        }
+    }
+
+    // --- Helpers hôte ---
+
+    private fun onHostAck(state: GameUiState, playerId: Int): GameUiState {
+        val acks = state.revealAcks + playerId
+        return if (acks.size >= state.players.size) {
+            startCluePhase(state.copy(revealAcks = acks))
+        } else {
+            state.copy(revealAcks = acks)
+        }
+    }
+
+    private fun startCluePhase(state: GameUiState): GameUiState {
+        val newState = startNewClueRound(state.copy(currentScreen = Screen.GameBoard))
+        broadcastBoard(newState)
+        hostSession?.sendPhase(Protocol.PHASE_CLUE)
+        return newState
+    }
+
+    private fun registerHostVote(state: GameUiState, playerId: Int, targetId: Int): GameUiState {
+        if (state.votePhase == VotePhase.IDLE) return state
+        val expectedVoters = if (state.votePhase == VotePhase.SECOND_ROUND) {
+            state.voteOrder.toSet()
+        } else {
+            activePlayers(state).map { it.id }.toSet()
+        }
+        if (playerId !in expectedVoters) return state
+        val newVotes = state.votes + (playerId to targetId)
+        return if (newVotes.keys.containsAll(expectedVoters)) {
+            resolveRoundHost(state.copy(votes = newVotes))
+        } else {
+            state.copy(votes = newVotes)
+        }
+    }
+
+    private fun resolveRoundHost(state: GameUiState): GameUiState {
+        val resolved = resolveRound(state)
+        broadcastResolved(resolved)
+        return resolved
+    }
+
+    private fun broadcastResolved(state: GameUiState) {
+        state.elimination?.let { elimination ->
+            hostSession?.sendElimination(
+                elimination.playerId, elimination.pseudo, elimination.role, state.turnNumber
+            )
+        }
+        when {
+            state.result != null -> {
+                hostSession?.sendResult(state.players, state.result, state.totalScores)
+                hostSession?.sendPhase(Protocol.PHASE_RESULT)
+            }
+            state.votePhase == VotePhase.SECOND_ROUND -> {
+                broadcastBoard(state)
+                hostSession?.sendPhase(Protocol.PHASE_VOTE)
+            }
+        }
+    }
+
+    private fun broadcastBoard(state: GameUiState) {
+        hostSession?.sendBoard(
+            players = state.players,
+            clueOrder = state.clueOrder,
+            roundNumber = state.roundNumber,
+            turnNumber = state.turnNumber,
+            category = state.wordPair?.category,
+            votePhase = state.votePhase,
+            currentVoterId = null,
+            tiedCandidates = state.tiedCandidates
+        )
+    }
+
     fun resetGame() {
+        hostSession = null
         _uiState.update { state ->
             GameUiState(categories = state.categories)
         }
@@ -319,7 +526,11 @@ class GameViewModelFactory(
     @Suppress("UNCHECKED_CAST")
     override fun <T : ViewModel> create(modelClass: Class<T>): T {
         if (modelClass.isAssignableFrom(GameViewModel::class.java)) {
-            return GameViewModel(container.gameEngine, container.wordRepository) as T
+            return GameViewModel(
+                gameEngine = container.gameEngine,
+                wordRepository = container.wordRepository,
+                connectionManager = container.connectionManager
+            ) as T
         }
         throw IllegalArgumentException("Unknown ViewModel class: ${modelClass.name}")
     }

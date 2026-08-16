@@ -41,6 +41,7 @@ fun EliminationScreen(
     result: Victory?,
     turnNumber: Int,
     pendingMrWhiteGuess: Player?,
+    isSelf: Boolean = false,
     onContinue: () -> Unit,
     onResolveMrWhiteGuess: (Boolean) -> Unit
 ) {
@@ -49,7 +50,11 @@ fun EliminationScreen(
         Role.UNDERCOVER -> R.drawable.eliminated_undercover
         Role.MR_WHITE -> R.drawable.eliminated_mrwhite
     }
-    val title = "${elimination.pseudo} était ${rolePhrase(elimination.role)}, il a été éliminé !"
+    val title = if (isSelf) {
+        "Tu étais ${rolePhrase(elimination.role)}, tu as été éliminé !"
+    } else {
+        "${elimination.pseudo} était ${rolePhrase(elimination.role)}, il a été éliminé !"
+    }
 
     Box(modifier = Modifier.fillMaxSize()) {
         Image(

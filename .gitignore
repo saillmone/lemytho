@@ -23,6 +23,11 @@ captures/
 # Keystores (ne jamais versionner les clés)
 *.jks
 *.keystore
+keystore.properties
+
+# Serveur Node.js (multijoueur)
+/server/node_modules/
+/server/dist/
 
 # OS
 Thumbs.db

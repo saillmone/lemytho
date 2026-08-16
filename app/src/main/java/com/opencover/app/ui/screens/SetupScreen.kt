@@ -20,6 +20,7 @@ import androidx.compose.material3.MenuAnchorType
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -44,7 +45,8 @@ fun SetupScreen(
     onPlayerCountChange: (Int) -> Unit,
     onCategoryChange: (String?) -> Unit,
     onThreePlayerIsMrWhiteChange: (Boolean) -> Unit,
-    onNext: () -> Unit
+    onNext: () -> Unit,
+    onBack: () -> Unit
 ) {
     Box(modifier = Modifier.fillMaxSize()) {
         Image(
@@ -94,7 +96,7 @@ fun SetupScreen(
             if (playerCount == 3) {
                 Spacer(Modifier.height(24.dp))
                 ScrimText(
-                    text = "Rôle du 3e joueur",
+                    text = "Rôle du 3ème joueur",
                     style = MaterialTheme.typography.titleMedium
                 )
                 Spacer(Modifier.height(8.dp))
@@ -170,6 +172,15 @@ fun SetupScreen(
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Text("Suivant", fontSize = 18.sp)
+            }
+
+            Spacer(Modifier.height(8.dp))
+
+            TextButton(
+                onClick = onBack,
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text("Retour")
             }
         }
     }

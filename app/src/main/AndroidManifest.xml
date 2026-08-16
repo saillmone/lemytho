@@ -1,6 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
+    <uses-permission android:name="android.permission.INTERNET" />
+
+    <!-- usesCleartextTraffic : autorise le HTTP en clair pour le développement local
+         (émulateur 10.0.2.2 / IP LAN). En production, le serveur est servi en WSS (TLS)
+         via Caddy, donc le trafic reste chiffré. -->
     <application
         android:name=".OpenCoverApp"
         android:label="@string/app_name"
@@ -8,6 +13,7 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:allowBackup="true"
         android:supportsRtl="true"
+        android:usesCleartextTraffic="true"
         android:theme="@style/Theme.OpenCover">
 
         <activity

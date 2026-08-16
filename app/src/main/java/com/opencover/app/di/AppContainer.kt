@@ -6,6 +6,7 @@ import com.opencover.app.data.local.AppDatabase
 import com.opencover.app.data.local.WordRepository
 import com.opencover.app.data.local.WordRepositoryImpl
 import com.opencover.app.engine.GameEngine
+import com.opencover.app.net.ConnectionManager
 
 /**
  * Conteneur d'injection de dépendances manuel.
@@ -25,4 +26,6 @@ class AppContainer(context: Context) {
     )
 
     val gameEngine: GameEngine = GameEngine()
+
+    val connectionManager: ConnectionManager = ConnectionManager()
 }
