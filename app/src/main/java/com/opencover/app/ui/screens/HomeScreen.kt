@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -25,7 +26,7 @@ import com.opencover.app.ui.theme.MrWhite
 import com.opencover.app.ui.theme.SpecialElite
 
 @Composable
-fun HomeScreen(onNewGame: () -> Unit) {
+fun HomeScreen(onNewGame: () -> Unit, onMultiplayer: () -> Unit) {
     Box(modifier = Modifier.fillMaxSize()) {
         Image(
             painter = painterResource(id = R.drawable.home_bg),
@@ -67,6 +68,15 @@ fun HomeScreen(onNewGame: () -> Unit) {
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Text("Nouvelle partie", fontSize = 18.sp)
+            }
+
+            Spacer(Modifier.height(12.dp))
+
+            OutlinedButton(
+                onClick = onMultiplayer,
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text("Multijoueur", fontSize = 18.sp)
             }
 
             Spacer(Modifier.weight(1f))

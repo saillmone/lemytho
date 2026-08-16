@@ -7,6 +7,8 @@ import androidx.activity.viewModels
 import com.opencover.app.ui.GameViewModel
 import com.opencover.app.ui.GameViewModelFactory
 import com.opencover.app.ui.OpenCoverAppRoot
+import com.opencover.app.ui.multiplayer.MultiplayerViewModel
+import com.opencover.app.ui.multiplayer.MultiplayerViewModelFactory
 import com.opencover.app.ui.theme.OpenCoverTheme
 
 class MainActivity : ComponentActivity() {
@@ -15,11 +17,18 @@ class MainActivity : ComponentActivity() {
         GameViewModelFactory((application as OpenCoverApp).container)
     }
 
+    private val multiplayerViewModel: MultiplayerViewModel by viewModels {
+        MultiplayerViewModelFactory((application as OpenCoverApp).container)
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContent {
             OpenCoverTheme {
-                OpenCoverAppRoot(viewModel = viewModel)
+                OpenCoverAppRoot(
+                    viewModel = viewModel,
+                    multiplayerViewModel = multiplayerViewModel
+                )
             }
         }
     }

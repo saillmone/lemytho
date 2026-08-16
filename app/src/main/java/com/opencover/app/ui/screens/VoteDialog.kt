@@ -32,6 +32,7 @@ fun VoteDialog(
     currentVoter: Player,
     targets: List<Player>,
     isSecondRound: Boolean,
+    isSelf: Boolean = false,
     onCastVote: (Int) -> Unit
 ) {
     Dialog(onDismissRequest = { /* vote obligatoire : pas de fermeture */ }) {
@@ -68,7 +69,7 @@ fun VoteDialog(
                                 color = MaterialTheme.colorScheme.primary
                             )
                         ) {
-                            append(currentVoter.pseudo)
+                            append(if (isSelf) "toi" else currentVoter.pseudo)
                         }
                         append(" ?")
                     },

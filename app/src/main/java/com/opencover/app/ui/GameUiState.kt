@@ -13,6 +13,7 @@ sealed interface Screen {
     data object Reveal : Screen
     data object GameBoard : Screen
     data object Elimination : Screen
+    data object Multiplayer : Screen
 }
 
 /** Joueur éliminé affiché sur l'écran intermédiaire post-vote. */
@@ -74,5 +75,9 @@ data class GameUiState(
     // Fin de partie
     val result: Victory? = null,
     val finalScores: Map<Int, Int> = emptyMap(),
-    val totalScores: Map<Int, Int> = emptyMap()
+    val totalScores: Map<Int, Int> = emptyMap(),
+
+    // Multijoueur (mode hôte autoritaire)
+    val multiplayerHost: Boolean = false,
+    val revealAcks: Set<Int> = emptySet()
 )

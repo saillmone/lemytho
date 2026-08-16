@@ -11,8 +11,11 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.Icon
@@ -46,7 +49,9 @@ fun ResultScreen(
     result: Victory,
     scores: Map<Int, Int>,
     onReplay: () -> Unit,
-    onReset: () -> Unit
+    onReset: () -> Unit,
+    isHost: Boolean = false,
+    onHostReady: () -> Unit = {}
 ) {
     Box(modifier = Modifier.fillMaxSize()) {
         Image(
@@ -64,7 +69,7 @@ fun ResultScreen(
             Spacer(Modifier.height(48.dp))
 
             ScrimText(
-                text = victoryTitle(result),
+                text = victoryTitle(result, players),
                 style = MaterialTheme.typography.headlineMedium,
                 fontWeight = FontWeight.Bold,
                 textAlign = TextAlign.Center
@@ -88,7 +93,8 @@ fun ResultScreen(
                 verticalArrangement = Arrangement.spacedBy(4.dp),
                 modifier = Modifier.weight(1f)
             ) {
-                items(players, key = { it.id }) { player ->
+                val ranked = players.sortedByDescending { scores[it.id] ?: 0 }
+                itemsIndexed(ranked, key = { _, player -> player.id }) { index, player ->
                     val points = scores[player.id] ?: 0
                     Row(
                         modifier = Modifier
@@ -98,6 +104,7 @@ fun ResultScreen(
                             .padding(horizontal = 12.dp, vertical = 8.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
+                        RankBadge(rank = index + 1)
                         Icon(
                             imageVector = roleIcon(player.role),
                             contentDescription = roleLabel(player.role),
@@ -121,11 +128,20 @@ fun ResultScreen(
                 }
             }
 
-            Button(
-                onClick = onReplay,
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Text("Rejouer", fontSize = 18.sp)
+            if (isHost) {
+                Button(
+                    onClick = onHostReady,
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text("Prêt pour la prochaine manche", fontSize = 18.sp)
+                }
+            } else {
+                Button(
+                    onClick = onReplay,
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text("Rejouer", fontSize = 18.sp)
+                }
             }
             Spacer(Modifier.height(8.dp))
             OutlinedButton(
@@ -138,12 +154,50 @@ fun ResultScreen(
     }
 }
 
-private fun victoryTitle(result: Victory): String = when (result) {
+@Composable
+private fun RankBadge(rank: Int) {
+    if (rank !in 1..3) {
+        Spacer(Modifier.width(28.dp))
+        return
+    }
+    val (background, foreground) = when (rank) {
+        1 -> Color(0xFFD4AF37) to Color(0xFF3A2E00) // or
+        2 -> Color(0xFFB8B8B8) to Color(0xFF2A2A2A) // argent
+        else -> Color(0xFFCD7F32) to Color(0xFF331C00) // bronze
+    }
+    Box(
+        modifier = Modifier
+            .size(28.dp)
+            .clip(CircleShape)
+            .background(background),
+        contentAlignment = Alignment.Center
+    ) {
+        Text(
+            text = "$rank",
+            style = MaterialTheme.typography.labelMedium,
+            fontWeight = FontWeight.Bold,
+            color = foreground
+        )
+    }
+    Spacer(Modifier.width(8.dp))
+}
+
+private fun victoryTitle(result: Victory, players: List<Player>): String = when (result) {
     Victory.Ongoing -> "Partie en cours"
-    Victory.Civil -> "Victoire des Civils"
-    Victory.Undercover -> "Victoire des Infiltrés"
+    Victory.Civil -> {
+        val n = players.count { it.role == Role.CIVIL }
+        if (n <= 1) "Victoire du Civil" else "Victoire des Civils"
+    }
+    Victory.Undercover -> {
+        val n = players.count { it.role == Role.UNDERCOVER }
+        if (n <= 1) "Victoire de l'Infiltré" else "Victoire des Infiltrés"
+    }
     is Victory.MrWhite -> "Victoire de Mr White"
-    Victory.Combined -> "Victoire des Infiltrés et de Mr White"
+    Victory.Combined -> {
+        val nU = players.count { it.role == Role.UNDERCOVER }
+        val prefix = if (nU <= 1) "Victoire de l'Infiltré" else "Victoire des Infiltrés"
+        "$prefix et de Mr White"
+    }
 }
 
 @Composable

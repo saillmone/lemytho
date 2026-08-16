@@ -1,4 +1,4 @@
-OpenCover est un jeu de société de rôles cachés à jouer entre amis, sur un seul téléphone que l'on se passe.
+OpenCover est un jeu de société de rôles cachés à jouer entre amis, en local (un téléphone que l'on se passe) ou en ligne (un hôte + des invités).
 
 Chaque joueur reçoit secrètement un rôle :
 - <b>Civil</b> : il connaît le mot secret et doit démasquer les intrus.
@@ -12,7 +12,8 @@ Déroulement d'une manche :
 4. Le rôle du joueur éliminé est révélé, et la manche continue jusqu'à la victoire.
 
 Points forts :
-- Hors-ligne, aucun compte ni connexion requis.
+- Multijoueur en ligne (hôte + invités) ou hors-ligne sur un seul téléphone.
+- Aucun compte à créer : on rejoint une partie avec un simple code.
 - 3 à 20 joueurs, de nombreuses catégories de mots.
 - Scores cumulés sur plusieurs manches.
 - Interface sombre et illustrations cartoon.
