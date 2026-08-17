@@ -30,6 +30,10 @@ class HostSession(private val connectionManager: ConnectionManager) {
         connectionManager.broadcast(Protocol.EVENT_GAME_PHASE, GameProtocol.phasePayload(phase))
     }
 
+    fun sendRevealAck(acked: Int, total: Int) {
+        connectionManager.broadcast(Protocol.EVENT_GAME_REVEAL_ACK, GameProtocol.revealAckPayload(acked, total))
+    }
+
     fun sendBoard(
         players: List<Player>,
         clueOrder: List<Int>,

@@ -62,6 +62,9 @@ object GameProtocol {
     fun phasePayload(phase: String): JSONObject =
         JSONObject().put("phase", phase)
 
+    fun revealAckPayload(acked: Int, total: Int): JSONObject =
+        JSONObject().put("acked", acked).put("total", total)
+
     fun boardPayload(
         players: List<Player>,
         clueOrder: List<Int>,

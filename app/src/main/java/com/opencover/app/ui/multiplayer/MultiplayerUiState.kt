@@ -45,6 +45,9 @@ data class MultiplayerUiState(
     val myRole: Role? = null,
     val myWord: String? = null,
     val revealConfirmed: Boolean = false,
+    // Progression de la révélation : X confirmations sur Y joueurs.
+    val revealAcked: Int = 0,
+    val revealTotal: Int = 0,
     val board: BoardSnapshot? = null,
     val elimination: EliminationSnapshot? = null,
     val guestResult: ResultSnapshot? = null,

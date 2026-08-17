@@ -29,6 +29,9 @@ object Protocol {
     /** Résultat final + scores. */
     const val EVENT_GAME_RESULT = "game:result"
 
+    /** Progression des confirmations de révélation (X sur Y ont validé). */
+    const val EVENT_GAME_REVEAL_ACK = "game:revealAck"
+
     // --- Client -> hôte (via relay:toHost) ---
 
     /** L'invité a terminé sa révélation (acknowledgement). */
@@ -50,7 +53,8 @@ object Protocol {
         EVENT_GAME_BOARD,
         EVENT_GAME_PHASE,
         EVENT_GAME_ELIMINATION,
-        EVENT_GAME_RESULT
+        EVENT_GAME_RESULT,
+        EVENT_GAME_REVEAL_ACK
     )
 
     /**

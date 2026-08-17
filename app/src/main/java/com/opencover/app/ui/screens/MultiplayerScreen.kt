@@ -138,6 +138,8 @@ fun MultiplayerNavHost(
                         assignedWord = state.myWord ?: ""
                     ),
                     waiting = state.revealConfirmed,
+                    ackedCount = state.revealAcked,
+                    totalCount = state.revealTotal,
                     onDone = onGuestRevealDone
                 )
             }
@@ -595,7 +597,7 @@ private fun WaitingScreen(
         Spacer(Modifier.height(16.dp))
 
         ScrimText(
-            text = "L'hôte va lancer la partie (salon ${code ?: ""})",
+            text = "Le Maître du Jeu va lancer la partie (salon ${code ?: ""})",
             style = MaterialTheme.typography.bodyLarge
         )
 
@@ -669,7 +671,7 @@ private fun MemberList(members: List<LobbyMember>, myPlayerId: Int?) {
         members.forEach { member ->
             val suffix = when {
                 member.playerId == myPlayerId -> " (toi)"
-                member.isHost -> " (hôte)"
+                member.isHost -> " (Maître du Jeu)"
                 else -> ""
             }
             Row(

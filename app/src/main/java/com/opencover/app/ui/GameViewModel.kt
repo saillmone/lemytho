@@ -384,10 +384,8 @@ class GameViewModel(
 
     /** L'hôte a vu son rôle : enregistre son ack et attend les invités. */
     fun hostRevealDone() {
-        _uiState.update { state ->
-            if (!state.multiplayerHost) return@update state
-            onHostAck(state, Protocol.HOST_PLAYER_ID)
-        }
+        if (!_uiState.value.multiplayerHost) return
+        applyHostAck(Protocol.HOST_PLAYER_ID)
     }
 
     /** L'hôte vote depuis son propre appareil. */
@@ -418,9 +416,19 @@ class GameViewModel(
     }
 
     private fun onGuestReveal(playerId: Int) {
+        if (!_uiState.value.multiplayerHost) return
+        applyHostAck(playerId)
+    }
+
+    /** Enregistre un ack de révélation puis diffuse la progression aux invités. */
+    private fun applyHostAck(playerId: Int) {
         _uiState.update { state ->
             if (!state.multiplayerHost) return@update state
             onHostAck(state, playerId)
+        }
+        val state = _uiState.value
+        if (state.multiplayerHost && state.currentScreen == Screen.Reveal) {
+            hostSession?.sendRevealAck(state.revealAcks.size, state.players.size)
         }
     }
 

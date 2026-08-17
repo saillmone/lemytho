@@ -237,6 +237,8 @@ class MultiplayerViewModel(
                         myWord = word,
                         inRound = true,
                         wantsReplay = false,
+                        revealAcked = 0,
+                        revealTotal = 0,
                         board = null,
                         elimination = null,
                         guestResult = null,
@@ -284,6 +286,15 @@ class MultiplayerViewModel(
                 // chaque invité choisit lui-même quand voir le score final. La manche
                 // est terminée pour cet invité jusqu'à la prochaine relance.
                 _uiState.update { it.copy(guestResult = result, inRound = false) }
+            }
+
+            Protocol.EVENT_GAME_REVEAL_ACK -> {
+                _uiState.update {
+                    it.copy(
+                        revealAcked = event.data.optInt("acked"),
+                        revealTotal = event.data.optInt("total")
+                    )
+                }
             }
 
             // game:start et game:phase n'ont pas d'action directe ici.

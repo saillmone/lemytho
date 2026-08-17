@@ -67,6 +67,8 @@ import com.opencover.app.ui.theme.SpecialElite
 fun RevealOwnScreen(
     player: Player,
     waiting: Boolean,
+    ackedCount: Int? = null,
+    totalCount: Int? = null,
     onDone: () -> Unit
 ) {
     val isMrWhite = player.role == Role.MR_WHITE
@@ -109,12 +111,22 @@ fun RevealOwnScreen(
                         .weight(1f),
                     contentAlignment = Alignment.Center
                 ) {
-                    ScrimText(
-                        text = "En attente des autres joueurs…",
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.Bold,
-                        textAlign = TextAlign.Center
-                    )
+                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                        ScrimText(
+                            text = "En attente des autres joueurs…",
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.Bold,
+                            textAlign = TextAlign.Center
+                        )
+                        if (ackedCount != null && totalCount != null) {
+                            Spacer(Modifier.height(8.dp))
+                            ScrimText(
+                                text = "Prêts : $ackedCount / $totalCount",
+                                style = MaterialTheme.typography.bodyLarge,
+                                textAlign = TextAlign.Center
+                            )
+                        }
+                    }
                 }
             } else {
                 // Zone « maintenir pour révéler » : le doigt ne masque pas le mot.
@@ -366,19 +378,31 @@ fun GuestEliminationScreen(
 
             Spacer(Modifier.weight(1f))
 
+            if (!hasResult && elimination.role != Role.MR_WHITE) {
+                ScrimText(
+                    text = "Début du tour ${elimination.turnNumber}",
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold,
+                    textAlign = TextAlign.Center
+                )
+                Spacer(Modifier.height(8.dp))
+            }
+
+            ScrimText(
+                text = nextStepText(hasResult),
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.Bold,
+                textAlign = TextAlign.Center
+            )
+
             if (hasResult) {
+                Spacer(Modifier.height(16.dp))
                 Button(
                     onClick = onSeeResults,
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     Text("Voir les résultats", fontSize = 18.sp)
                 }
-            } else {
-                ScrimText(
-                    text = "En attente de la suite…",
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold
-                )
             }
         }
     }
@@ -391,6 +415,11 @@ private fun eliminationPhrase(elimination: EliminationSnapshot, isMe: Boolean): 
     } else {
         "${elimination.pseudo} était $role, il a été éliminé !"
     }
+}
+
+private fun nextStepText(hasResult: Boolean): String = when {
+    hasResult -> "La partie est terminée."
+    else -> "En attente du Maître du Jeu…"
 }
 
 /** Résultat final vu par un invité (rôles de tous + scores cumulés). */
@@ -472,7 +501,7 @@ fun GuestResultScreen(
 
             if (wantsReplay) {
                 ScrimText(
-                    text = "En attente de l'hôte…",
+                    text = "En attente du Maître du Jeu…",
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold
                 )

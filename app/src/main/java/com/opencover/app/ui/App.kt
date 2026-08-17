@@ -72,6 +72,8 @@ fun OpenCoverAppRoot(
                     RevealOwnScreen(
                         player = host,
                         waiting = Protocol.HOST_PLAYER_ID in state.revealAcks,
+                        ackedCount = state.revealAcks.size,
+                        totalCount = state.players.size,
                         onDone = viewModel::hostRevealDone
                     )
                     }
