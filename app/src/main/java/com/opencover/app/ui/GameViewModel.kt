@@ -99,7 +99,7 @@ class GameViewModel(
 
     /** Tire [count] pseudos amusants distincts, mélangés aléatoirement. */
     private fun funnyNamesFor(count: Int): List<String> =
-        FUNNY_NAMES.shuffled().take(count)
+        FunnyNames.NAMES.shuffled().take(count)
 
     fun startGame() {
         viewModelScope.launch {
@@ -517,14 +517,6 @@ class GameViewModel(
         }
     }
 }
-
-/** Pseudos amusants (thème espion/enquête), utilisés pour le préremplissage rapide. */
-private val FUNNY_NAMES = listOf(
-    "Sherlock", "Columbo", "Mata Hari", "Arsène", "Le Fouineur",
-    "Hercule", "Miss Marple", "Le Corbeau", "Tête Brûlée", "L'Indic",
-    "La Taupe", "Double Jeu", "Mr X", "La Silhouette", "L'Ombre",
-    "Baron Noir", "Professeur", "La Belette", "Cervelle", "L'Espionne"
-)
 
 /** Factory manuelle : injecte GameEngine et WordRepository sans Hilt. */
 class GameViewModelFactory(

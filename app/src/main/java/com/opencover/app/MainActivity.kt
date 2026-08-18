@@ -7,6 +7,7 @@ import androidx.activity.viewModels
 import com.opencover.app.ui.GameViewModel
 import com.opencover.app.ui.GameViewModelFactory
 import com.opencover.app.ui.OpenCoverAppRoot
+import com.opencover.app.ui.Screen
 import com.opencover.app.ui.multiplayer.MultiplayerViewModel
 import com.opencover.app.ui.multiplayer.MultiplayerViewModelFactory
 import com.opencover.app.ui.theme.OpenCoverTheme
@@ -23,6 +24,7 @@ class MainActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        handleInvitationIntent()
         setContent {
             OpenCoverTheme {
                 OpenCoverAppRoot(
@@ -31,5 +33,16 @@ class MainActivity : ComponentActivity() {
                 )
             }
         }
+    }
+
+    /** Intercepte un lien d'invitation opencover://join?code=…&server=… */
+    private fun handleInvitationIntent() {
+        val data = intent?.data ?: return
+        if (data.scheme != "opencover" || data.host != "join") return
+        viewModel.navigate(Screen.Multiplayer)
+        multiplayerViewModel.handleDeepLink(
+            code = data.getQueryParameter("code"),
+            server = data.getQueryParameter("server")
+        )
     }
 }

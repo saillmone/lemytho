@@ -12,7 +12,8 @@ import org.json.JSONObject
 data class PublicPlayer(
     val playerId: Int,
     val pseudo: String,
-    val status: PlayerStatus
+    val status: PlayerStatus,
+    val role: Role? = null
 )
 
 /** Instantané public du plateau, diffusé par l'hôte. */
@@ -82,6 +83,7 @@ object GameProtocol {
                     .put("playerId", p.id)
                     .put("pseudo", p.pseudo)
                     .put("status", p.status.name)
+                    .put("role", if (p.status == PlayerStatus.ELIMINATED) p.role.name else JSONObject.NULL)
             )
         }
         return JSONObject()
@@ -200,7 +202,8 @@ object GameProtocol {
                     PublicPlayer(
                         playerId = p.optInt("playerId"),
                         pseudo = p.optString("pseudo"),
-                        status = parseStatus(p.optString("status"))
+                        status = parseStatus(p.optString("status")),
+                        role = if (p.isNull("role")) null else parseRole(p.optString("role"))
                     )
                 )
             }

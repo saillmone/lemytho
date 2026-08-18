@@ -67,7 +67,7 @@ fun HomeScreen(onNewGame: () -> Unit, onMultiplayer: () -> Unit) {
                 onClick = onNewGame,
                 modifier = Modifier.fillMaxWidth()
             ) {
-                Text("Nouvelle partie", fontSize = 18.sp)
+                Text("Jouer sur un seul écran", fontSize = 18.sp)
             }
 
             Spacer(Modifier.height(12.dp))
@@ -76,7 +76,7 @@ fun HomeScreen(onNewGame: () -> Unit, onMultiplayer: () -> Unit) {
                 onClick = onMultiplayer,
                 modifier = Modifier.fillMaxWidth()
             ) {
-                Text("Multijoueur", fontSize = 18.sp)
+                Text("Jouer sur plusieurs écrans", fontSize = 18.sp)
             }
 
             Spacer(Modifier.weight(1f))

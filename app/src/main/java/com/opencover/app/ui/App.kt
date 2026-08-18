@@ -144,6 +144,7 @@ fun OpenCoverAppRoot(
                         tiedCandidates = state.tiedCandidates,
                         selfVote = state.multiplayerHost,
                         selfId = if (state.multiplayerHost) Protocol.HOST_PLAYER_ID else null,
+                        hasVoted = state.multiplayerHost && Protocol.HOST_PLAYER_ID in state.votes,
                         onStartVote = viewModel::startVote,
                         onCastVote = if (state.multiplayerHost) viewModel::hostCastVote else viewModel::castVote
                     )
@@ -179,6 +180,7 @@ fun OpenCoverAppRoot(
                     },
                     onUpdateServerUrl = multiplayerViewModel::updateServerUrl,
                     onUpdatePseudo = multiplayerViewModel::updatePseudo,
+                    onRandomPseudo = multiplayerViewModel::randomPseudo,
                     onStartHosting = multiplayerViewModel::startHosting,
                     onGoToJoin = multiplayerViewModel::goToJoin,
                     onJoinLobby = multiplayerViewModel::joinLobby,

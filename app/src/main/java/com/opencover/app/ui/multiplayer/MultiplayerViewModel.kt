@@ -10,6 +10,7 @@ import com.opencover.app.net.GameProtocol
 import com.opencover.app.net.LobbyResult
 import com.opencover.app.net.Protocol
 import com.opencover.app.net.ServerEvent
+import com.opencover.app.ui.FunnyNames
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -57,12 +58,29 @@ class MultiplayerViewModel(
         _uiState.update { it.copy(myPseudo = pseudo) }
     }
 
+    /** Tire un pseudo amusant aléatoire (thème espion/enquête). */
+    fun randomPseudo() {
+        _uiState.update { it.copy(myPseudo = FunnyNames.random()) }
+    }
+
     fun goToHost() {
         _uiState.update { it.copy(screen = MultiplayerScreen.HostLobby, error = null) }
     }
 
     fun goToJoin() {
         _uiState.update { it.copy(screen = MultiplayerScreen.JoinLobby, error = null) }
+    }
+
+    /** Deep link d'invitation : pré-remplit serveur + code puis ouvre l'écran de saisie. */
+    fun handleDeepLink(code: String?, server: String?) {
+        _uiState.update { state ->
+            state.copy(
+                serverUrl = server?.trim()?.ifBlank { null } ?: state.serverUrl,
+                joinCode = code?.trim()?.uppercase() ?: state.joinCode,
+                screen = MultiplayerScreen.JoinLobby,
+                error = null
+            )
+        }
     }
 
     fun goToHostSetup() {

@@ -29,19 +29,43 @@ class GameProtocolTest {
     // --- Projection : pas de fuite de secrets ---
 
     @Test
-    fun `le plateau public ne contient ni role ni mot secret`() {
+    fun `le plateau public n'expose pas le mot secret et masque le role des actifs`() {
         val payload = boardPayload()
 
         val playersArray = payload.getJSONArray("players")
         for (i in 0 until playersArray.length()) {
             val p = playersArray.getJSONObject(i)
-            assertFalse("un plateau public ne doit pas exposer de rôle", p.has("role"))
             assertFalse("un plateau public ne doit pas exposer de mot", p.has("word"))
             assertFalse("un plateau public ne doit pas exposer assignedWord", p.has("assignedWord"))
+            // Les joueurs actifs ne doivent pas voir leur rôle fuiter.
+            assertTrue("le rôle d'un joueur actif doit être null", p.isNull("role"))
         }
         // Aucun mot de la paire ne doit transiter.
         assertFalse(payload.has("wordPair"))
         assertFalse(payload.has("word"))
+    }
+
+    @Test
+    fun `le role d'un joueur elimine est expose publiquement`() {
+        val eliminated = listOf(
+            Player(
+                id = 1, pseudo = "Alice", role = Role.CIVIL, assignedWord = "Pizza",
+                status = PlayerStatus.ELIMINATED
+            )
+        )
+        val payload = GameProtocol.boardPayload(
+            players = eliminated,
+            clueOrder = listOf(1),
+            roundNumber = 1,
+            turnNumber = 1,
+            category = null,
+            votePhase = VotePhase.IDLE,
+            currentVoterId = null,
+            tiedCandidates = emptySet()
+        )
+
+        val board = GameProtocol.parseBoard(payload)
+        assertEquals(Role.CIVIL, board.players.single().role)
     }
 
     @Test

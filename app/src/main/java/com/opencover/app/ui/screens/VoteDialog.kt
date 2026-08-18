@@ -62,7 +62,7 @@ fun VoteDialog(
                 Spacer(Modifier.height(4.dp))
                 Text(
                     text = buildAnnotatedString {
-                        append("Qui est l'intrus d'après ")
+                        append("Qui n'est pas un Civil d'après ")
                         withStyle(
                             SpanStyle(
                                 fontWeight = FontWeight.Bold,

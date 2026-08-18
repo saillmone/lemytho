@@ -32,6 +32,7 @@ data class MultiplayerUiState(
     val myPseudo: String = "",
     val myPlayerId: Int? = null,
     val lobbyCode: String? = null,
+    val joinCode: String = "",
     val members: List<LobbyMember> = emptyList(),
     val error: String? = null,
     val serverUrl: String = BuildConfig.SERVER_URL,

@@ -306,7 +306,7 @@ private fun shouldVote(board: BoardSnapshot, myId: Int): Boolean = when (board.v
 
 private fun guestStatusText(votePhase: VotePhase, hasVoted: Boolean, shouldVote: Boolean): String = when {
     hasVoted -> "Vote enregistré, en attente des autres…"
-    votePhase == VotePhase.IDLE -> "Donnez vos indices dans l'ordre, puis votez !"
+    votePhase == VotePhase.IDLE -> "Donnez vos indices dans l'ordre, discutez… puis votez !"
     shouldVote && votePhase == VotePhase.SECOND_ROUND -> "Égalité : re-vote pour départager."
     shouldVote -> "À toi de voter !"
     else -> "Vote en cours…"
@@ -337,6 +337,23 @@ private fun GuestPlayerCard(player: com.opencover.app.net.PublicPlayer, order: I
                 color = if (eliminated) MaterialTheme.colorScheme.onSurfaceVariant
                 else MaterialTheme.colorScheme.onSurface
             )
+            if (eliminated && player.role != null) {
+                Spacer(Modifier.height(4.dp))
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Icon(
+                        imageVector = roleIcon(player.role),
+                        contentDescription = roleLabel(player.role),
+                        tint = roleColor(player.role),
+                        modifier = Modifier.size(16.dp)
+                    )
+                    Spacer(Modifier.width(4.dp))
+                    Text(
+                        text = roleLabel(player.role),
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = roleColor(player.role)
+                    )
+                }
+            }
         }
     }
 }
@@ -378,9 +395,17 @@ fun GuestEliminationScreen(
 
             Spacer(Modifier.weight(1f))
 
-            if (!hasResult && elimination.role != Role.MR_WHITE) {
+            if (!hasResult) {
+                val preStepText = when (elimination.role) {
+                    Role.MR_WHITE -> if (isMe) {
+                        "Tu as une dernière chance de deviner le mot des Civils."
+                    } else {
+                        "${elimination.pseudo} a une dernière chance de deviner le mot des Civils."
+                    }
+                    else -> "Début du tour ${elimination.turnNumber}"
+                }
                 ScrimText(
-                    text = "Début du tour ${elimination.turnNumber}",
+                    text = preStepText,
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold,
                     textAlign = TextAlign.Center
@@ -449,6 +474,12 @@ fun GuestResultScreen(
                 text = victoryTitle(result.victory, result.players),
                 style = MaterialTheme.typography.headlineMedium,
                 fontWeight = FontWeight.Bold,
+                textAlign = TextAlign.Center
+            )
+            Spacer(Modifier.height(8.dp))
+            ScrimText(
+                text = victorySubtitle(result.victory, result.players),
+                style = MaterialTheme.typography.bodyMedium,
                 textAlign = TextAlign.Center
             )
 
@@ -562,6 +593,12 @@ private fun rolePhrase(role: Role): String = when (role) {
     Role.MR_WHITE -> "Mr White"
 }
 
+private fun roleLabel(role: Role): String = when (role) {
+    Role.CIVIL -> "Civil"
+    Role.UNDERCOVER -> "Infiltré"
+    Role.MR_WHITE -> "Mr White"
+}
+
 private fun victoryTitle(result: Victory, players: List<Player>): String = when (result) {
     Victory.Ongoing -> "Partie en cours"
     Victory.Civil -> {
@@ -577,6 +614,25 @@ private fun victoryTitle(result: Victory, players: List<Player>): String = when 
         val nU = players.count { it.role == Role.UNDERCOVER }
         val prefix = if (nU <= 1) "Victoire de l'Infiltré" else "Victoire des Infiltrés"
         "$prefix et de Mr White"
+    }
+}
+
+private fun victorySubtitle(result: Victory, players: List<Player>): String = when (result) {
+    Victory.Ongoing -> ""
+    Victory.Civil -> "Tous les Infiltrés et Mr White ont été éliminés."
+    Victory.Undercover -> "Au moins un Infiltré a survécu jusqu'à la fin."
+    Victory.Combined -> {
+        val undercovers = players.count { it.role == Role.UNDERCOVER }
+        val mrWhites = players.count { it.role == Role.MR_WHITE }
+        val undercoverLabel = if (undercovers <= 1) "l'Infiltré" else "les Infiltrés"
+        val mrWhiteLabel = if (mrWhites <= 1) "Mr White" else "les Mr White"
+        "Les Civils sont éliminés : $undercoverLabel et $mrWhiteLabel gagnent ensemble."
+    }
+    is Victory.MrWhite -> if (result.byGuess) {
+        val winner = players.firstOrNull { it.id == result.winnerIds.firstOrNull() }
+        "${winner?.pseudo ?: "Mr White"} a deviné le mot exact !"
+    } else {
+        "Mr White a survécu jusqu'à la fin."
     }
 }
 

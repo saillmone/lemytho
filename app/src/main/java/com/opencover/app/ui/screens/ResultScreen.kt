@@ -148,7 +148,7 @@ fun ResultScreen(
                 onClick = onReset,
                 modifier = Modifier.fillMaxWidth()
             ) {
-                Text("Nouvelle partie")
+                Text(if (isHost) "Quitter" else "Nouvelle partie", fontSize = 18.sp)
             }
         }
     }
@@ -224,7 +224,13 @@ private fun victorySubtitle(result: Victory, players: List<Player>): String = wh
     Victory.Ongoing -> ""
     Victory.Civil -> "Tous les Infiltrés et Mr White ont été éliminés."
     Victory.Undercover -> "Au moins un Infiltré a survécu jusqu'à la fin."
-    Victory.Combined -> "Les Civils sont éliminés : Infiltrés et Mr White gagnent ensemble."
+    Victory.Combined -> {
+        val undercovers = players.count { it.role == Role.UNDERCOVER }
+        val mrWhites = players.count { it.role == Role.MR_WHITE }
+        val undercoverLabel = if (undercovers <= 1) "l'Infiltré" else "les Infiltrés"
+        val mrWhiteLabel = if (mrWhites <= 1) "Mr White" else "les Mr White"
+        "Les Civils sont éliminés : $undercoverLabel et $mrWhiteLabel gagnent ensemble."
+    }
     is Victory.MrWhite -> if (result.byGuess) {
         val winner = players.firstOrNull { it.id == result.winnerIds.firstOrNull() }
         "${winner?.pseudo ?: "Mr White"} a deviné le mot exact !"

@@ -81,7 +81,7 @@ fun EliminationScreen(
             Spacer(Modifier.weight(1f))
 
             ScrimText(
-                text = nextStepText(result, pendingMrWhiteGuess, turnNumber),
+                text = nextStepText(result, pendingMrWhiteGuess, turnNumber, isSelf),
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.Bold,
                 textAlign = TextAlign.Center
@@ -110,11 +110,19 @@ fun EliminationScreen(
     }
 }
 
-private fun nextStepText(result: Victory?, pendingMrWhiteGuess: Player?, turnNumber: Int): String =
+private fun nextStepText(
+    result: Victory?,
+    pendingMrWhiteGuess: Player?,
+    turnNumber: Int,
+    isSelf: Boolean
+): String =
     when {
         result != null -> "La partie est terminée."
-        pendingMrWhiteGuess != null ->
+        pendingMrWhiteGuess != null -> if (isSelf) {
+            "Tu as une dernière chance de deviner le mot des Civils."
+        } else {
             "${pendingMrWhiteGuess.pseudo} a une dernière chance de deviner le mot des Civils."
+        }
         else -> "Début du tour $turnNumber"
     }
 

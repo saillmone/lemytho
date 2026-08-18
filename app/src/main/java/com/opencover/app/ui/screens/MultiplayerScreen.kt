@@ -1,5 +1,7 @@
 package com.opencover.app.ui.screens
 
+import android.content.Intent
+import android.net.Uri
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -40,6 +42,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardCapitalization
@@ -64,6 +67,7 @@ fun MultiplayerNavHost(
     onBack: () -> Unit,
     onUpdateServerUrl: (String) -> Unit,
     onUpdatePseudo: (String) -> Unit,
+    onRandomPseudo: () -> Unit,
     onStartHosting: () -> Unit,
     onGoToJoin: () -> Unit,
     onJoinLobby: (String) -> Unit,
@@ -84,6 +88,7 @@ fun MultiplayerNavHost(
             error = state.error,
             connectionStatus = state.connectionStatus,
             onUpdatePseudo = onUpdatePseudo,
+            onRandomPseudo = onRandomPseudo,
             onUpdateServerUrl = onUpdateServerUrl,
             onStartHosting = onStartHosting,
             onGoToJoin = onGoToJoin,
@@ -94,6 +99,7 @@ fun MultiplayerNavHost(
             code = state.lobbyCode,
             members = state.members,
             myPlayerId = state.myPlayerId,
+            serverUrl = state.serverUrl,
             error = state.error,
             onGoToHostSetup = onGoToHostSetup,
             onBack = onBack
@@ -113,7 +119,9 @@ fun MultiplayerNavHost(
         MultiplayerScreen.JoinLobby -> JoinLobbyScreen(
             pseudo = state.myPseudo,
             error = state.error,
+            initialCode = state.joinCode,
             onUpdatePseudo = onUpdatePseudo,
+            onRandomPseudo = onRandomPseudo,
             onJoinLobby = onJoinLobby,
             onBack = onBack
         )
@@ -193,6 +201,7 @@ private fun MultiplayerMenuScreen(
     error: String?,
     connectionStatus: ConnectionStatus,
     onUpdatePseudo: (String) -> Unit,
+    onRandomPseudo: () -> Unit,
     onUpdateServerUrl: (String) -> Unit,
     onStartHosting: () -> Unit,
     onGoToJoin: () -> Unit,
@@ -216,6 +225,13 @@ private fun MultiplayerMenuScreen(
             label = { Text("Ton pseudo") },
             modifier = Modifier.fillMaxWidth()
         )
+
+        TextButton(
+            onClick = onRandomPseudo,
+            modifier = Modifier.align(Alignment.End)
+        ) {
+            Text("Pseudo aléatoire")
+        }
 
         Spacer(Modifier.height(12.dp))
 
@@ -276,6 +292,7 @@ private fun HostLobbyScreen(
     code: String?,
     members: List<LobbyMember>,
     myPlayerId: Int?,
+    serverUrl: String,
     error: String?,
     onGoToHostSetup: () -> Unit,
     onBack: () -> Unit
@@ -283,6 +300,7 @@ private fun HostLobbyScreen(
     var showNotReadyConfirm by remember { mutableStateOf(false) }
     val readyCount = members.count { it.ready }
     val allReady = members.all { it.ready }
+    val context = LocalContext.current
 
     MultiplayerBackground(backgroundRes = R.drawable.players_bg) {
         Spacer(Modifier.height(40.dp))
@@ -309,6 +327,22 @@ private fun HostLobbyScreen(
             textAlign = TextAlign.Center,
             modifier = Modifier.fillMaxWidth()
         )
+
+        Spacer(Modifier.height(12.dp))
+
+        OutlinedButton(
+            onClick = {
+                val message = buildInvitationMessage(code, serverUrl)
+                val sendIntent = Intent(Intent.ACTION_SEND).apply {
+                    type = "text/plain"
+                    putExtra(Intent.EXTRA_TEXT, message)
+                }
+                context.startActivity(Intent.createChooser(sendIntent, "Partager l'invitation"))
+            },
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Text("Partager le lien", fontSize = 16.sp)
+        }
 
         if (error != null) {
             Spacer(Modifier.height(12.dp))
@@ -505,11 +539,13 @@ private fun HostSetupScreen(
 private fun JoinLobbyScreen(
     pseudo: String,
     error: String?,
+    initialCode: String = "",
     onUpdatePseudo: (String) -> Unit,
+    onRandomPseudo: () -> Unit,
     onJoinLobby: (String) -> Unit,
     onBack: () -> Unit
 ) {
-    var code by remember { mutableStateOf("") }
+    var code by remember { mutableStateOf(initialCode) }
 
     MultiplayerBackground(backgroundRes = R.drawable.players_bg) {
         Spacer(Modifier.height(40.dp))
@@ -529,6 +565,13 @@ private fun JoinLobbyScreen(
             label = { Text("Ton pseudo") },
             modifier = Modifier.fillMaxWidth()
         )
+
+        TextButton(
+            onClick = onRandomPseudo,
+            modifier = Modifier.align(Alignment.End)
+        ) {
+            Text("Pseudo aléatoire")
+        }
 
         Spacer(Modifier.height(12.dp))
 
@@ -736,4 +779,11 @@ private fun RoleChoiceButton(
             Text(label)
         }
     }
+}
+
+/** Message d'invitation : contient le code ET le lien cliquable, au choix. */
+private fun buildInvitationMessage(code: String?, serverUrl: String): String {
+    val c = code ?: ""
+    val link = "opencover://join?code=$c&server=${Uri.encode(serverUrl)}"
+    return "Rejoins ma partie OpenCover !\nCode : $c\n$link"
 }

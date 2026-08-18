@@ -10,17 +10,25 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Masks
+import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
@@ -44,6 +52,7 @@ fun GameBoardScreen(
     tiedCandidates: Set<Int>,
     selfVote: Boolean = false,
     selfId: Int? = null,
+    hasVoted: Boolean = false,
     onStartVote: () -> Unit,
     onCastVote: (Int) -> Unit
 ) {
@@ -98,10 +107,11 @@ fun GameBoardScreen(
 
             Spacer(Modifier.height(16.dp))
 
-            val statusText = when (votePhase) {
-                VotePhase.IDLE -> "Donnez vos indices dans l'ordre, discutez… puis votez !"
-                VotePhase.SECOND_ROUND -> "Égalité : re-vote pour départager."
-                VotePhase.VOTING -> "Vote en cours…"
+            val statusText = when {
+                hasVoted -> "Vote enregistré, en attente des autres…"
+                votePhase == VotePhase.IDLE -> "Donnez vos indices dans l'ordre, discutez… puis votez !"
+                votePhase == VotePhase.SECOND_ROUND -> "Égalité : re-vote pour départager."
+                else -> "Vote en cours…"
             }
             ScrimText(
                 text = statusText,
@@ -177,11 +187,20 @@ private fun PlayerCard(player: Player, order: Int? = null, selfId: Int? = null) 
             )
             if (eliminated) {
                 Spacer(Modifier.height(4.dp))
-                Text(
-                    text = roleLabel(player.role),
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = roleColor(player.role)
-                )
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Icon(
+                        imageVector = roleIcon(player.role),
+                        contentDescription = roleLabel(player.role),
+                        tint = roleColor(player.role),
+                        modifier = Modifier.size(16.dp)
+                    )
+                    Spacer(Modifier.width(4.dp))
+                    Text(
+                        text = roleLabel(player.role),
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = roleColor(player.role)
+                    )
+                }
             }
         }
     }
@@ -191,6 +210,12 @@ private fun roleLabel(role: Role): String = when (role) {
     Role.CIVIL -> "Civil"
     Role.UNDERCOVER -> "Infiltré"
     Role.MR_WHITE -> "Mr White"
+}
+
+private fun roleIcon(role: Role): ImageVector = when (role) {
+    Role.CIVIL -> Icons.Filled.Person
+    Role.UNDERCOVER -> Icons.Filled.Masks
+    Role.MR_WHITE -> Icons.Filled.VisibilityOff
 }
 
 @Composable
