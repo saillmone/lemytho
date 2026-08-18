@@ -289,9 +289,23 @@ class GameViewModel(
         _uiState.value = resolved
         // Cas Mr White : le résultat n'est connu qu'après la résolution de la
         // devinette. On le diffuse ici (l'écran d'élimination est déjà affiché).
-        if (resolved.multiplayerHost && resolved.result != null) {
-            hostSession?.sendResult(resolved.players, resolved.result, resolved.totalScores)
-            hostSession?.sendPhase(Protocol.PHASE_RESULT)
+        if (resolved.multiplayerHost) {
+            if (resolved.result != null) {
+                hostSession?.sendResult(resolved.players, resolved.result, resolved.totalScores)
+                hostSession?.sendPhase(Protocol.PHASE_RESULT)
+            } else {
+                // Devinette fausse et partie encore en cours : on notifie les invités
+                // que la devinette est résolue pour qu'ils affichent « Début du tour X ».
+                resolved.elimination?.let { e ->
+                    hostSession?.sendElimination(
+                        playerId = e.playerId,
+                        pseudo = e.pseudo,
+                        role = e.role,
+                        turnNumber = resolved.turnNumber,
+                        guessResolved = true
+                    )
+                }
+            }
         }
     }
 

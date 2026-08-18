@@ -53,10 +53,16 @@ class HostSession(private val connectionManager: ConnectionManager) {
         )
     }
 
-    fun sendElimination(playerId: Int, pseudo: String, role: Role, turnNumber: Int) {
+    fun sendElimination(
+        playerId: Int,
+        pseudo: String,
+        role: Role,
+        turnNumber: Int,
+        guessResolved: Boolean = false
+    ) {
         connectionManager.broadcast(
             Protocol.EVENT_GAME_ELIMINATION,
-            GameProtocol.eliminationPayload(playerId, pseudo, role, turnNumber)
+            GameProtocol.eliminationPayload(playerId, pseudo, role, turnNumber, guessResolved)
         )
     }
 

@@ -3,6 +3,7 @@ package com.opencover.app
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.activity.enableEdgeToEdge
 import androidx.activity.viewModels
 import com.opencover.app.ui.GameViewModel
 import com.opencover.app.ui.GameViewModelFactory
@@ -24,6 +25,7 @@ class MainActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        enableEdgeToEdge()
         handleInvitationIntent()
         setContent {
             OpenCoverTheme {

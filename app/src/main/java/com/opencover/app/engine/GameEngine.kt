@@ -206,3 +206,19 @@ class GameEngine(private val random: Random = Random.Default) {
         const val MAX_PLAYERS = 20
     }
 }
+
+/**
+ * Libellé lisible de la répartition des rôles pour l'affichage (setup et lobby).
+ * Réutilise [GameEngine.computeRoleDistribution] : source de vérité unique,
+ * aucun doublon de la formule métier.
+ */
+fun roleDistributionLabel(playerCount: Int, threePlayerIsMrWhite: Boolean = true): String {
+    val d = GameEngine().computeRoleDistribution(playerCount, threePlayerIsMrWhite)
+    return buildList {
+        add(if (d.civilCount <= 1) "${d.civilCount} Civil" else "${d.civilCount} Civils")
+        if (d.undercoverCount > 0) {
+            add(if (d.undercoverCount <= 1) "${d.undercoverCount} Infiltré" else "${d.undercoverCount} Infiltrés")
+        }
+        if (d.mrWhiteCount > 0) add("${d.mrWhiteCount} Mr White")
+    }.joinToString(" · ")
+}

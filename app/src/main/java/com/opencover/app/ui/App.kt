@@ -2,6 +2,7 @@ package com.opencover.app.ui
 
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -36,7 +37,9 @@ fun OpenCoverAppRoot(
     val state by viewModel.uiState.collectAsStateWithLifecycle()
 
     Surface(
-        modifier = Modifier.fillMaxSize(),
+        modifier = Modifier
+            .fillMaxSize()
+            .safeDrawingPadding(),
         color = MaterialTheme.colorScheme.background
     ) {
         when (state.currentScreen) {
@@ -186,6 +189,8 @@ fun OpenCoverAppRoot(
                     onJoinLobby = multiplayerViewModel::joinLobby,
                     onSetReady = multiplayerViewModel::setReady,
                     onGoToHostSetup = multiplayerViewModel::goToHostSetup,
+                    onBackToHostLobby = multiplayerViewModel::backToHostLobby,
+                    onBackToMenu = multiplayerViewModel::backToMenu,
                     onSetCategory = multiplayerViewModel::setCategory,
                     onSetThreePlayerIsMrWhite = multiplayerViewModel::setThreePlayerIsMrWhite,
                     onLaunchGame = {

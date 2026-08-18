@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
@@ -107,7 +108,7 @@ fun RevealScreen(
             ) {
                 if (isRevealed) {
                     if (isMrWhite) {
-                        ScrimCard {
+                        ScrimCard(modifier = Modifier.offset(y = (-88).dp)) {
                             Text(
                                 text = "Tu es Mr White",
                                 style = MaterialTheme.typography.displaySmall,

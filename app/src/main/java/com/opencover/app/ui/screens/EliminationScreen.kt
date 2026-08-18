@@ -105,6 +105,7 @@ fun EliminationScreen(
     if (pendingMrWhiteGuess != null) {
         MrWhiteGuessDialog(
             player = pendingMrWhiteGuess,
+            isSelf = isSelf,
             onResolve = onResolveMrWhiteGuess
         )
     }
@@ -135,6 +136,7 @@ private fun rolePhrase(role: Role): String = when (role) {
 @Composable
 private fun MrWhiteGuessDialog(
     player: Player,
+    isSelf: Boolean,
     onResolve: (Boolean) -> Unit
 ) {
     Dialog(onDismissRequest = { /* décision obligatoire : pas de fermeture */ }) {
@@ -154,7 +156,11 @@ private fun MrWhiteGuessDialog(
                 )
                 Spacer(Modifier.height(8.dp))
                 Text(
-                    text = "${player.pseudo} a été éliminé. En tant que Mr White, il dispose d'une dernière tentative pour deviner le mot exact des Civils.",
+                    text = if (isSelf) {
+                        "Tu as été éliminé. En tant que Mr White, tu disposes d'une dernière tentative pour deviner le mot exact des Civils."
+                    } else {
+                        "${player.pseudo} a été éliminé. En tant que Mr White, il dispose d'une dernière tentative pour deviner le mot exact des Civils."
+                    },
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
                 Spacer(Modifier.height(16.dp))
@@ -162,14 +168,14 @@ private fun MrWhiteGuessDialog(
                     onClick = { onResolve(true) },
                     modifier = Modifier.fillMaxWidth()
                 ) {
-                    Text("Il a trouvé le mot")
+                    Text(if (isSelf) "Tu as trouvé le mot" else "Il a trouvé le mot")
                 }
                 Spacer(Modifier.height(8.dp))
                 OutlinedButton(
                     onClick = { onResolve(false) },
                     modifier = Modifier.fillMaxWidth()
                 ) {
-                    Text("Il s'est trompé")
+                    Text(if (isSelf) "Tu t'es trompé" else "Il s'est trompé")
                 }
             }
         }

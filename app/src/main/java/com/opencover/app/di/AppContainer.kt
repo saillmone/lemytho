@@ -28,4 +28,6 @@ class AppContainer(context: Context) {
     val gameEngine: GameEngine = GameEngine()
 
     val connectionManager: ConnectionManager = ConnectionManager()
+
+    val pseudoStore: PseudoStore = PseudoStore(context)
 }

@@ -5,6 +5,7 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import com.opencover.app.data.local.WordRepository
 import com.opencover.app.di.AppContainer
+import com.opencover.app.di.PseudoStore
 import com.opencover.app.net.ConnectionManager
 import com.opencover.app.net.GameProtocol
 import com.opencover.app.net.LobbyResult
@@ -28,13 +29,16 @@ import org.json.JSONObject
  */
 class MultiplayerViewModel(
     private val connectionManager: ConnectionManager,
-    private val wordRepository: WordRepository
+    private val wordRepository: WordRepository,
+    private val pseudoStore: PseudoStore
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(MultiplayerUiState())
     val uiState: StateFlow<MultiplayerUiState> = _uiState.asStateFlow()
 
     init {
+        // Pré-remplit le pseudo avec le dernier utilisé.
+        _uiState.update { it.copy(myPseudo = pseudoStore.load()) }
         viewModelScope.launch {
             connectionManager.status.collect { status ->
                 _uiState.update { it.copy(connectionStatus = status) }
@@ -56,11 +60,14 @@ class MultiplayerViewModel(
 
     fun updatePseudo(pseudo: String) {
         _uiState.update { it.copy(myPseudo = pseudo) }
+        pseudoStore.save(pseudo)
     }
 
     /** Tire un pseudo amusant aléatoire (thème espion/enquête). */
     fun randomPseudo() {
-        _uiState.update { it.copy(myPseudo = FunnyNames.random()) }
+        val pseudo = FunnyNames.random()
+        _uiState.update { it.copy(myPseudo = pseudo) }
+        pseudoStore.save(pseudo)
     }
 
     fun goToHost() {
@@ -87,6 +94,16 @@ class MultiplayerViewModel(
         _uiState.update { it.copy(screen = MultiplayerScreen.HostSetup, error = null) }
     }
 
+    /** Retour du setup hôte vers le salon (sans fermer la partie). */
+    fun backToHostLobby() {
+        _uiState.update { it.copy(screen = MultiplayerScreen.HostLobby, error = null) }
+    }
+
+    /** Retour de l'écran de saisie du code vers le menu multijoueur. */
+    fun backToMenu() {
+        _uiState.update { it.copy(screen = MultiplayerScreen.Menu, error = null) }
+    }
+
     fun setCategory(category: String?) {
         _uiState.update { it.copy(selectedCategory = category) }
     }
@@ -96,7 +113,12 @@ class MultiplayerViewModel(
     }
 
     fun startHosting() {
-        val url = _uiState.value.serverUrl
+        val state = _uiState.value
+        val url = state.serverUrl
+        if (state.myPseudo.isBlank()) {
+            _uiState.update { it.copy(error = "Indique un pseudo pour créer la partie") }
+            return
+        }
         if (url.isBlank()) {
             _uiState.update { it.copy(error = "Renseigne l'adresse du serveur") }
             return
@@ -104,7 +126,7 @@ class MultiplayerViewModel(
         connectionManager.connect(url)
         viewModelScope.launch {
             val result = withTimeoutOrNull(15_000) {
-                connectionManager.createLobby(_uiState.value.myPseudo.ifBlank { "Hôte" })
+                connectionManager.createLobby(state.myPseudo.trim())
             }
             when (result) {
                 is LobbyResult.Success -> _uiState.update {
@@ -124,8 +146,13 @@ class MultiplayerViewModel(
     }
 
     fun joinLobby(code: String) {
-        val url = _uiState.value.serverUrl
+        val state = _uiState.value
+        val url = state.serverUrl
         val normalizedCode = code.trim().uppercase()
+        if (state.myPseudo.isBlank()) {
+            _uiState.update { it.copy(error = "Indique un pseudo pour rejoindre la partie") }
+            return
+        }
         if (url.isBlank()) {
             _uiState.update { it.copy(error = "Renseigne l'adresse du serveur") }
             return
@@ -137,7 +164,7 @@ class MultiplayerViewModel(
         connectionManager.connect(url)
         viewModelScope.launch {
             val result = withTimeoutOrNull(15_000) {
-                connectionManager.joinLobby(normalizedCode, _uiState.value.myPseudo.ifBlank { "Joueur" })
+                connectionManager.joinLobby(normalizedCode, state.myPseudo.trim())
             }
             when (result) {
                 is LobbyResult.Success -> _uiState.update {
@@ -231,13 +258,18 @@ class MultiplayerViewModel(
     private fun handleEvent(event: ServerEvent) {
         when (event) {
             is ServerEvent.LobbyUpdate -> _uiState.update { it.copy(members = event.members) }
-            is ServerEvent.LobbyClosed -> _uiState.update {
-                it.copy(
-                    error = "Le salon a été fermé par l'hôte",
-                    screen = MultiplayerScreen.Menu,
-                    isHost = false,
-                    lobbyCode = null
-                )
+            is ServerEvent.LobbyClosed -> {
+                // Coupe la socket pour que le statut repasse à « Hors ligne » et
+                // ne reste pas affiché « Connecté » à côté du message de fermeture.
+                connectionManager.disconnect()
+                _uiState.update {
+                    it.copy(
+                        error = "Le salon a été fermé par l'hôte",
+                        screen = MultiplayerScreen.Menu,
+                        isHost = false,
+                        lobbyCode = null
+                    )
+                }
             }
             is ServerEvent.GameEvent -> handleGameEvent(event)
         }
@@ -331,7 +363,8 @@ class MultiplayerViewModelFactory(
         if (modelClass.isAssignableFrom(MultiplayerViewModel::class.java)) {
             return MultiplayerViewModel(
                 connectionManager = container.connectionManager,
-                wordRepository = container.wordRepository
+                wordRepository = container.wordRepository,
+                pseudoStore = container.pseudoStore
             ) as T
         }
         throw IllegalArgumentException("Unknown ViewModel class: ${modelClass.name}")

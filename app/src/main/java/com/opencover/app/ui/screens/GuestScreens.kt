@@ -2,6 +2,7 @@ package com.opencover.app.ui.screens
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -11,6 +12,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -21,12 +23,13 @@ import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Masks
 import androidx.compose.material.icons.filled.Person
@@ -147,7 +150,10 @@ fun RevealOwnScreen(
                 ) {
                     if (isRevealed) {
                         if (isMrWhite) {
-                            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                            Column(
+                                horizontalAlignment = Alignment.CenterHorizontally,
+                                modifier = Modifier.offset(y = (-88).dp)
+                            ) {
                                 ScrimText(
                                     text = "Tu es Mr White",
                                     style = MaterialTheme.typography.displaySmall,
@@ -396,8 +402,9 @@ fun GuestEliminationScreen(
             Spacer(Modifier.weight(1f))
 
             if (!hasResult) {
-                val preStepText = when (elimination.role) {
-                    Role.MR_WHITE -> if (isMe) {
+                val preStepText = when {
+                    elimination.guessResolved -> "Début du tour ${elimination.turnNumber}"
+                    elimination.role == Role.MR_WHITE -> if (isMe) {
                         "Tu as une dernière chance de deviner le mot des Civils."
                     } else {
                         "${elimination.pseudo} a une dernière chance de deviner le mot des Civils."
@@ -455,6 +462,8 @@ fun GuestResultScreen(
     onReady: () -> Unit,
     onQuit: () -> Unit
 ) {
+    var showQuitConfirm by remember { mutableStateOf(false) }
+
     Box(modifier = Modifier.fillMaxSize()) {
         Image(
             painter = painterResource(id = R.drawable.results_bg),
@@ -547,17 +556,55 @@ fun GuestResultScreen(
                 Spacer(Modifier.height(8.dp))
             }
 
-            OutlinedButton(
-                onClick = onQuit,
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Text("Quitter", fontSize = 18.sp)
-            }
+            ScrimTextButton(
+                text = "Quitter",
+                onClick = { showQuitConfirm = true }
+            )
         }
     }
-}
 
+    if (showQuitConfirm) {
+        AlertDialog(
+            onDismissRequest = { showQuitConfirm = false },
+            title = { Text("Quitter le salon ?") },
+            text = {
+                Text("Tu vas quitter le salon et être retiré de la partie.")
+            },
+            confirmButton = {
+                TextButton(onClick = {
+                    showQuitConfirm = false
+                    onQuit()
+                }) {
+                    Text("Quitter")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showQuitConfirm = false }) {
+                    Text("Annuler")
+                }
+            }
+        )
+    }
+}
 // --- Helpers (dupliqués volontairement pour des écrans stateless autonomes) ---
+
+@Composable
+private fun ScrimTextButton(
+    text: String,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Text(
+        text = text,
+        modifier = modifier
+            .clip(RoundedCornerShape(12.dp))
+            .clickable(onClick = onClick)
+            .background(Color.Black.copy(alpha = 0.45f))
+            .padding(horizontal = 12.dp, vertical = 6.dp),
+        style = MaterialTheme.typography.bodyMedium,
+        color = Color.White
+    )
+}
 
 @Composable
 private fun RankBadge(rank: Int) {

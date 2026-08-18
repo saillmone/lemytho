@@ -2,6 +2,7 @@ package com.opencover.app.ui.screens
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -17,16 +18,21 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Masks
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -53,6 +59,8 @@ fun ResultScreen(
     isHost: Boolean = false,
     onHostReady: () -> Unit = {}
 ) {
+    var showQuitConfirm by remember { mutableStateOf(false) }
+
     Box(modifier = Modifier.fillMaxSize()) {
         Image(
             painter = painterResource(id = R.drawable.results_bg),
@@ -144,14 +152,53 @@ fun ResultScreen(
                 }
             }
             Spacer(Modifier.height(8.dp))
-            OutlinedButton(
-                onClick = onReset,
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Text(if (isHost) "Quitter" else "Nouvelle partie", fontSize = 18.sp)
-            }
+            ScrimTextButton(
+                text = "Quitter",
+                onClick = { if (isHost) showQuitConfirm = true else onReset() }
+            )
         }
     }
+
+    if (showQuitConfirm) {
+        AlertDialog(
+            onDismissRequest = { showQuitConfirm = false },
+            title = { Text("Quitter le salon ?") },
+            text = {
+                Text("En quittant, tu fermes le salon et tous les joueurs seront éjectés.")
+            },
+            confirmButton = {
+                TextButton(onClick = {
+                    showQuitConfirm = false
+                    onReset()
+                }) {
+                    Text("Quitter")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showQuitConfirm = false }) {
+                    Text("Annuler")
+                }
+            }
+        )
+    }
+}
+
+@Composable
+private fun ScrimTextButton(
+    text: String,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Text(
+        text = text,
+        modifier = modifier
+            .clip(RoundedCornerShape(12.dp))
+            .clickable(onClick = onClick)
+            .background(Color.Black.copy(alpha = 0.45f))
+            .padding(horizontal = 12.dp, vertical = 6.dp),
+        style = MaterialTheme.typography.bodyMedium,
+        color = Color.White
+    )
 }
 
 @Composable

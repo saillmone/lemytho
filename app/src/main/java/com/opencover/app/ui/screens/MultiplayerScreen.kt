@@ -4,6 +4,7 @@ import android.content.Intent
 import android.net.Uri
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -18,6 +19,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
@@ -52,6 +54,7 @@ import androidx.compose.ui.unit.sp
 import com.opencover.app.R
 import com.opencover.app.data.model.Player
 import com.opencover.app.data.model.Role
+import com.opencover.app.engine.roleDistributionLabel
 import com.opencover.app.net.ConnectionStatus
 import com.opencover.app.net.LobbyMember
 import com.opencover.app.ui.multiplayer.MultiplayerScreen
@@ -73,6 +76,8 @@ fun MultiplayerNavHost(
     onJoinLobby: (String) -> Unit,
     onSetReady: (Boolean) -> Unit,
     onGoToHostSetup: () -> Unit,
+    onBackToHostLobby: () -> Unit,
+    onBackToMenu: () -> Unit,
     onSetCategory: (String?) -> Unit,
     onSetThreePlayerIsMrWhite: (Boolean) -> Unit,
     onLaunchGame: () -> Unit,
@@ -108,12 +113,12 @@ fun MultiplayerNavHost(
         MultiplayerScreen.HostSetup -> HostSetupScreen(
             categories = state.categories,
             selectedCategory = state.selectedCategory,
-            memberCount = state.members.size,
+            memberCount = state.members.count { it.ready || it.isHost },
             threePlayerIsMrWhite = state.threePlayerIsMrWhite,
             onCategoryChange = onSetCategory,
             onThreePlayerIsMrWhiteChange = onSetThreePlayerIsMrWhite,
             onLaunch = onLaunchGame,
-            onBack = onBack
+            onBack = onBackToHostLobby
         )
 
         MultiplayerScreen.JoinLobby -> JoinLobbyScreen(
@@ -123,7 +128,7 @@ fun MultiplayerNavHost(
             onUpdatePseudo = onUpdatePseudo,
             onRandomPseudo = onRandomPseudo,
             onJoinLobby = onJoinLobby,
-            onBack = onBack
+            onBack = onBackToMenu
         )
 
         MultiplayerScreen.Waiting -> WaitingScreen(
@@ -233,28 +238,6 @@ private fun MultiplayerMenuScreen(
             Text("Pseudo aléatoire")
         }
 
-        Spacer(Modifier.height(12.dp))
-
-        var showAdvanced by remember { mutableStateOf(false) }
-
-        TextButton(
-            onClick = { showAdvanced = !showAdvanced },
-            modifier = Modifier.align(Alignment.End)
-        ) {
-            Text(if (showAdvanced) "Masquer les paramètres avancés" else "Paramètres avancés")
-        }
-
-        if (showAdvanced) {
-            OutlinedTextField(
-                value = serverUrl,
-                onValueChange = onUpdateServerUrl,
-                singleLine = true,
-                label = { Text("Adresse du serveur") },
-                modifier = Modifier.fillMaxWidth()
-            )
-            Spacer(Modifier.height(12.dp))
-        }
-
         if (error != null) {
             Spacer(Modifier.height(12.dp))
             ScrimText(
@@ -267,32 +250,48 @@ private fun MultiplayerMenuScreen(
         Spacer(Modifier.height(32.dp))
 
         Button(
-            onClick = onStartHosting,
-            modifier = Modifier.fillMaxWidth()
-        ) {
-            Text("Créer une partie", fontSize = 18.sp)
-        }
-
-        Spacer(Modifier.height(12.dp))
-
-        OutlinedButton(
             onClick = onGoToJoin,
             modifier = Modifier.fillMaxWidth()
         ) {
             Text("Rejoindre une partie", fontSize = 18.sp)
         }
 
-        Spacer(Modifier.height(8.dp))
+        Spacer(Modifier.height(12.dp))
+
+        OutlinedButton(
+            onClick = onStartHosting,
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Text("Créer une partie", fontSize = 18.sp)
+        }
 
         ConnectionStatusText(connectionStatus)
 
-        Spacer(Modifier.height(16.dp))
+        Spacer(Modifier.height(24.dp))
 
-        OutlinedButton(
-            onClick = onBack,
-            modifier = Modifier.fillMaxWidth()
+        var showAdvanced by remember { mutableStateOf(false) }
+
+        if (showAdvanced) {
+            OutlinedTextField(
+                value = serverUrl,
+                onValueChange = onUpdateServerUrl,
+                singleLine = true,
+                label = { Text("Adresse du serveur") },
+                modifier = Modifier.fillMaxWidth()
+            )
+            Spacer(Modifier.height(8.dp))
+        }
+
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
         ) {
-            Text("Retour", fontSize = 16.sp)
+            ScrimTextButton(text = "Retour", onClick = onBack)
+            ScrimTextButton(
+                text = if (showAdvanced) "Masquer" else "Paramètres avancés",
+                onClick = { showAdvanced = !showAdvanced }
+            )
         }
     }
 }
@@ -310,8 +309,10 @@ private fun HostLobbyScreen(
     onBack: () -> Unit
 ) {
     var showNotReadyConfirm by remember { mutableStateOf(false) }
+    var showQuitConfirm by remember { mutableStateOf(false) }
     val readyCount = members.count { it.ready }
     val allReady = members.all { it.ready }
+    val playingCount = members.count { it.ready || it.isHost }
     val context = LocalContext.current
 
     MultiplayerBackground(backgroundRes = R.drawable.players_bg) {
@@ -356,6 +357,24 @@ private fun HostLobbyScreen(
             Text("Partager le lien", fontSize = 16.sp)
         }
 
+        Spacer(Modifier.height(12.dp))
+
+        if (readyCount < 3) {
+            ScrimText(
+                text = "En attente d'au moins 3 joueurs prêts…",
+                style = MaterialTheme.typography.bodySmall,
+                textAlign = TextAlign.Center,
+                modifier = Modifier.fillMaxWidth()
+            )
+        } else {
+            ScrimText(
+                text = "Répartition : ${roleLabelForLobby(playingCount)}",
+                style = MaterialTheme.typography.bodyMedium,
+                textAlign = TextAlign.Center,
+                modifier = Modifier.fillMaxWidth()
+            )
+        }
+
         if (error != null) {
             Spacer(Modifier.height(12.dp))
             ScrimText(
@@ -376,17 +395,7 @@ private fun HostLobbyScreen(
 
         MemberList(members = members, myPlayerId = myPlayerId)
 
-        Spacer(Modifier.weight(1f))
-
-        if (readyCount < 3) {
-            ScrimText(
-                text = "En attente d'au moins 3 joueurs prêts…",
-                style = MaterialTheme.typography.bodySmall,
-                textAlign = TextAlign.Center,
-                modifier = Modifier.fillMaxWidth()
-            )
-            Spacer(Modifier.height(8.dp))
-        }
+        Spacer(Modifier.height(16.dp))
 
         Button(
             onClick = { if (allReady) onGoToHostSetup() else showNotReadyConfirm = true },
@@ -398,12 +407,35 @@ private fun HostLobbyScreen(
 
         Spacer(Modifier.height(8.dp))
 
-        OutlinedButton(
-            onClick = onBack,
-            modifier = Modifier.fillMaxWidth()
-        ) {
-            Text("Quitter", fontSize = 16.sp)
-        }
+        ScrimTextButton(
+            text = "Quitter",
+            onClick = { showQuitConfirm = true },
+            modifier = Modifier.fillMaxWidth(),
+            textAlign = TextAlign.Center
+        )
+    }
+
+    if (showQuitConfirm) {
+        AlertDialog(
+            onDismissRequest = { showQuitConfirm = false },
+            title = { Text("Quitter le salon ?") },
+            text = {
+                Text("En quittant, tu fermes le salon et tous les joueurs seront éjectés.")
+            },
+            confirmButton = {
+                TextButton(onClick = {
+                    showQuitConfirm = false
+                    onBack()
+                }) {
+                    Text("Quitter")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showQuitConfirm = false }) {
+                    Text("Annuler")
+                }
+            }
+        )
     }
 
     if (showNotReadyConfirm) {
@@ -456,7 +488,7 @@ private fun HostSetupScreen(
         Spacer(Modifier.height(24.dp))
 
         ScrimText(
-            text = "Catégorie",
+            text = "Choisis une thématique de mots",
             style = MaterialTheme.typography.titleMedium
         )
 
@@ -525,7 +557,16 @@ private fun HostSetupScreen(
             }
         }
 
-        Spacer(Modifier.weight(1f))
+        Spacer(Modifier.height(16.dp))
+
+        ScrimText(
+            text = "Répartition : ${roleDistributionLabel(memberCount, threePlayerIsMrWhite)}",
+            style = MaterialTheme.typography.bodyMedium,
+            textAlign = TextAlign.Center,
+            modifier = Modifier.fillMaxWidth()
+        )
+
+        Spacer(Modifier.height(24.dp))
 
         Button(
             onClick = onLaunch,
@@ -536,12 +577,12 @@ private fun HostSetupScreen(
 
         Spacer(Modifier.height(8.dp))
 
-        OutlinedButton(
+        ScrimTextButton(
+            text = "Retour",
             onClick = onBack,
-            modifier = Modifier.fillMaxWidth()
-        ) {
-            Text("Retour", fontSize = 16.sp)
-        }
+            modifier = Modifier.fillMaxWidth(),
+            textAlign = TextAlign.Center
+        )
     }
 }
 
@@ -619,12 +660,12 @@ private fun JoinLobbyScreen(
 
         Spacer(Modifier.height(12.dp))
 
-        OutlinedButton(
+        ScrimTextButton(
+            text = "Retour",
             onClick = onBack,
-            modifier = Modifier.fillMaxWidth()
-        ) {
-            Text("Retour", fontSize = 16.sp)
-        }
+            modifier = Modifier.fillMaxWidth(),
+            textAlign = TextAlign.Center
+        )
     }
 }
 
@@ -639,6 +680,9 @@ private fun WaitingScreen(
     onBack: () -> Unit
 ) {
     val myReady = members.firstOrNull { it.playerId == myPlayerId }?.ready == true
+    val readyCount = members.count { it.ready }
+    val playingCount = members.count { it.ready || it.isHost }
+    var showQuitConfirm by remember { mutableStateOf(false) }
 
     MultiplayerBackground(backgroundRes = R.drawable.players_bg) {
         Spacer(Modifier.height(40.dp))
@@ -656,18 +700,7 @@ private fun WaitingScreen(
             style = MaterialTheme.typography.bodyLarge
         )
 
-        Spacer(Modifier.height(24.dp))
-
-        ScrimText(
-            text = "Joueurs (${members.size})",
-            style = MaterialTheme.typography.titleMedium
-        )
-
-        Spacer(Modifier.height(8.dp))
-
-        MemberList(members = members, myPlayerId = myPlayerId)
-
-        Spacer(Modifier.weight(1f))
+        Spacer(Modifier.height(16.dp))
 
         if (myReady) {
             OutlinedButton(
@@ -685,18 +718,78 @@ private fun WaitingScreen(
             }
         }
 
+        if (readyCount < 3) {
+            Spacer(Modifier.height(12.dp))
+            ScrimText(
+                text = "En attente d'au moins 3 joueurs prêts…",
+                style = MaterialTheme.typography.bodySmall,
+                textAlign = TextAlign.Center,
+                modifier = Modifier.fillMaxWidth()
+            )
+        } else {
+            Spacer(Modifier.height(12.dp))
+            ScrimText(
+                text = "Répartition : ${roleLabelForLobby(playingCount)}",
+                style = MaterialTheme.typography.bodyMedium,
+                textAlign = TextAlign.Center,
+                modifier = Modifier.fillMaxWidth()
+            )
+        }
+
+        Spacer(Modifier.height(24.dp))
+
+        ScrimText(
+            text = "Joueurs (${members.size})",
+            style = MaterialTheme.typography.titleMedium
+        )
+
         Spacer(Modifier.height(8.dp))
 
-        OutlinedButton(
-            onClick = onBack,
-            modifier = Modifier.fillMaxWidth()
-        ) {
-            Text("Quitter", fontSize = 16.sp)
-        }
+        MemberList(members = members, myPlayerId = myPlayerId)
+
+        Spacer(Modifier.height(16.dp))
+
+        ScrimTextButton(
+            text = "Quitter",
+            onClick = { showQuitConfirm = true },
+            modifier = Modifier.fillMaxWidth(),
+            textAlign = TextAlign.Center
+        )
+    }
+
+    if (showQuitConfirm) {
+        AlertDialog(
+            onDismissRequest = { showQuitConfirm = false },
+            title = { Text("Quitter le salon ?") },
+            text = {
+                Text("Tu vas quitter le salon et être retiré de la partie.")
+            },
+            confirmButton = {
+                TextButton(onClick = {
+                    showQuitConfirm = false
+                    onBack()
+                }) {
+                    Text("Quitter")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showQuitConfirm = false }) {
+                    Text("Annuler")
+                }
+            }
+        )
     }
 }
 
 // --- Composants partagés ---
+
+/**
+ * Libellé de répartition affiché dans le lobby. À 3 joueurs, le choix
+ * Mr White / Infiltré n'est pas encore fait : on présente les deux possibilités.
+ */
+private fun roleLabelForLobby(playingCount: Int): String =
+    if (playingCount == 3) "2 Civils · 1 Mr White ou 1 Infiltré"
+    else roleDistributionLabel(playingCount)
 
 @Composable
 private fun MultiplayerBackground(
@@ -751,6 +844,8 @@ private fun MemberList(members: List<LobbyMember>, myPlayerId: Int?) {
 
 @Composable
 private fun ConnectionStatusText(status: ConnectionStatus) {
+    // « Hors ligne » est l'état par défaut sur cet écran : sans intérêt, on le masque.
+    if (status is ConnectionStatus.Disconnected) return
     val label = when (status) {
         is ConnectionStatus.Disconnected -> "Hors ligne"
         is ConnectionStatus.Connecting -> "Connexion…"
@@ -773,6 +868,26 @@ private fun ConnectionStatusText(status: ConnectionStatus) {
             }
         )
     }
+}
+
+@Composable
+private fun ScrimTextButton(
+    text: String,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+    textAlign: TextAlign? = null
+) {
+    Text(
+        text = text,
+        modifier = modifier
+            .clip(RoundedCornerShape(12.dp))
+            .clickable(onClick = onClick)
+            .background(Color.Black.copy(alpha = 0.45f))
+            .padding(horizontal = 12.dp, vertical = 6.dp),
+        style = MaterialTheme.typography.bodyMedium,
+        textAlign = textAlign,
+        color = Color.White
+    )
 }
 
 @Composable
