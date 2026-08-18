@@ -17,7 +17,7 @@ if (keystorePropertiesFile.exists()) {
 
 // URL du serveur multijoueur. Surchargeable au build :
 //   ./gradlew assembleDebug -Popencover.serverUrl=http://192.168.1.10:3000
-val serverUrl = (project.findProperty("opencover.serverUrl") as String?) ?: "http://10.0.2.2:3000"
+val serverUrl = (project.findProperty("opencover.serverUrl") as String?) ?: "https://opencover.duckdns.org"
 
 android {
     namespace = "com.opencover.app"

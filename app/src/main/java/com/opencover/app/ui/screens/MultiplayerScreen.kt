@@ -235,13 +235,25 @@ private fun MultiplayerMenuScreen(
 
         Spacer(Modifier.height(12.dp))
 
-        OutlinedTextField(
-            value = serverUrl,
-            onValueChange = onUpdateServerUrl,
-            singleLine = true,
-            label = { Text("Adresse du serveur") },
-            modifier = Modifier.fillMaxWidth()
-        )
+        var showAdvanced by remember { mutableStateOf(false) }
+
+        TextButton(
+            onClick = { showAdvanced = !showAdvanced },
+            modifier = Modifier.align(Alignment.End)
+        ) {
+            Text(if (showAdvanced) "Masquer les paramètres avancés" else "Paramètres avancés")
+        }
+
+        if (showAdvanced) {
+            OutlinedTextField(
+                value = serverUrl,
+                onValueChange = onUpdateServerUrl,
+                singleLine = true,
+                label = { Text("Adresse du serveur") },
+                modifier = Modifier.fillMaxWidth()
+            )
+            Spacer(Modifier.height(12.dp))
+        }
 
         if (error != null) {
             Spacer(Modifier.height(12.dp))
