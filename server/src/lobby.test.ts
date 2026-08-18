@@ -37,6 +37,19 @@ describe("LobbyRegistry", () => {
     expect(() => registry.joinRoom("ZZZZ", "Bob", "bob-socket")).toThrowError(LobbyError);
   });
 
+  it("refuse un pseudo déjà pris dans le salon (insensible à la casse)", () => {
+    const registry = new LobbyRegistry();
+    const { code } = registry.createRoom("host", "Alice");
+    registry.joinRoom(code, "Bob", "bob-socket");
+
+    try {
+      registry.joinRoom(code, "bob", "carla-socket");
+      throw new Error("devrait lever une LobbyError");
+    } catch (err) {
+      expect((err as LobbyError).code).toBe("PSEUDO_TAKEN");
+    }
+  });
+
   it("retire un invité sans fermer le salon", () => {
     const registry = new LobbyRegistry();
     const { code } = registry.createRoom("host", "Alice");

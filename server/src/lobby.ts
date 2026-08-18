@@ -72,7 +72,7 @@ export class LobbyRegistry {
     return { code, playerId: 1 };
   }
 
-  /** Fait rejoindre un invité. Lève [LobbyError] si le salon n'existe pas. */
+  /** Fait rejoindre un invité. Lève [LobbyError] si le salon n'existe pas ou si le pseudo est déjà pris. */
   joinRoom(
     code: string,
     pseudo: string,
@@ -81,6 +81,10 @@ export class LobbyRegistry {
     const room = this.rooms.get(code);
     if (!room) {
       throw new LobbyError("LOBBY_NOT_FOUND", "Salon introuvable");
+    }
+    const normalized = pseudo.trim().toLocaleLowerCase();
+    if (room.members.some((m) => m.pseudo.trim().toLocaleLowerCase() === normalized)) {
+      throw new LobbyError("PSEUDO_TAKEN", "Ce pseudo est déjà pris dans ce salon");
     }
     const playerId = room.nextPlayerId;
     room.nextPlayerId += 1;
