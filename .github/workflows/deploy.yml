@@ -1,0 +1,45 @@
+name: Déployer le relais
+
+on:
+  push:
+    branches: [ main ]
+    paths:
+      - "server/**"
+      - "docker-compose.prod.yml"
+      - ".github/workflows/deploy.yml"
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-relais
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Déployer sur le VPS
+        env:
+          OPENCOVER_HOST: ${{ secrets.OPENCOVER_HOST }}
+          OPENCOVER_USER: ${{ secrets.OPENCOVER_USER }}
+          OPENCOVER_SSH_KEY: ${{ secrets.OPENCOVER_SSH_KEY }}
+        run: |
+          mkdir -p ~/.ssh
+          chmod 700 ~/.ssh
+          echo "$OPENCOVER_SSH_KEY" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          ssh-keyscan -H "$OPENCOVER_HOST" >> ~/.ssh/known_hosts 2>/dev/null
+          ssh -i ~/.ssh/deploy_key \
+              -o StrictHostKeyChecking=accept-new \
+              "$OPENCOVER_USER@$OPENCOVER_HOST" 'bash -s' <<'REMOTE'
+          set -euo pipefail
+          REPO_DIR="$HOME/opencover"
+          if [ ! -d "$REPO_DIR/.git" ]; then
+            git clone https://github.com/saillmone/opencover.git "$REPO_DIR"
+          else
+            git -C "$REPO_DIR" fetch origin main
+            git -C "$REPO_DIR" reset --hard origin/main
+          fi
+          cd "$REPO_DIR"
+          docker compose -f docker-compose.prod.yml up -d --build --remove-orphans
+          docker image prune -f
+          REMOTE

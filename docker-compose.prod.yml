@@ -1,0 +1,17 @@
+# =============================================================================
+# Déploiement production — relais OpenCover derrière un nginx existant.
+#
+# Ici on ne lance QUE le relais (pas de Caddy) : le nginx du VPS fait déjà le
+# reverse proxy et le HTTPS (certbot). Le relais est exposé uniquement sur
+# 127.0.0.1:3000, donc inaccessible directement depuis l'extérieur.
+#
+# Usage : docker compose -f docker-compose.prod.yml up -d --build
+# =============================================================================
+services:
+  server:
+    build: ./server
+    restart: unless-stopped
+    environment:
+      PORT: "3000"
+    ports:
+      - "127.0.0.1:3000:3000"
