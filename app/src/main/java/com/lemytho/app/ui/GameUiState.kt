@@ -14,6 +14,7 @@ sealed interface Screen {
     data object GameBoard : Screen
     data object Elimination : Screen
     data object Multiplayer : Screen
+    data object Rules : Screen
 }
 
 /** Joueur éliminé affiché sur l'écran intermédiaire post-vote. */
@@ -79,5 +80,8 @@ data class GameUiState(
 
     // Multijoueur (mode hôte autoritaire)
     val multiplayerHost: Boolean = false,
-    val revealAcks: Set<Int> = emptySet()
+    val revealAcks: Set<Int> = emptySet(),
+
+    // La partie a été annulée (plus assez de joueurs) : l'hôte doit revenir au salon.
+    val hostAborted: Boolean = false
 )

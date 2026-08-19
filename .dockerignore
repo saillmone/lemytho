@@ -1,0 +1,16 @@
+# Contexte de build Docker : on ne garde que ce qui est nécessaire.
+.git
+.gitignore
+.gradle
+.idea
+node_modules
+**/node_modules
+app/build
+**/build
+web/dist
+server/dist
+apk
+*.apk
+keystore.properties
+local.properties
+*.log

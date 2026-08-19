@@ -50,6 +50,35 @@ describe("LobbyRegistry", () => {
     }
   });
 
+  it("reprend un invité web après déconnexion sans changer son playerId", () => {
+    const registry = new LobbyRegistry();
+    const { code } = registry.createRoom("host", "Alice");
+    registry.joinRoom(code, "Bob", "bob-socket", "client-bob");
+
+    // Déconnexion : on vide la socket, le membre reste en attente de reprise.
+    const room = registry.findRoomBySocket("bob-socket")!;
+    room.members.find((m) => m.socketId === "bob-socket")!.socketId = "";
+
+    const rejoin = registry.rejoinRoom(code, "client-bob", "bob-socket-2");
+    expect(rejoin).not.toBeNull();
+    expect(rejoin?.playerId).toBe(2);
+    expect(rejoin?.members.map((m) => m.playerId)).toEqual([1, 2]);
+  });
+
+  it("retire un membre en attente de reprise à l'expiration du délai", () => {
+    const registry = new LobbyRegistry();
+    const { code } = registry.createRoom("host", "Alice");
+    registry.joinRoom(code, "Bob", "bob-socket", "client-bob");
+    registry.joinRoom(code, "Carla", "carla-socket");
+
+    const room = registry.findRoomBySocket("bob-socket")!;
+    room.members.find((m) => m.socketId === "bob-socket")!.socketId = "";
+
+    const result = registry.leaveByClientId("client-bob");
+    expect(result?.wasHost).toBe(false);
+    expect(result?.members.map((m) => m.pseudo)).toEqual(["Alice", "Carla"]);
+  });
+
   it("retire un invité sans fermer le salon", () => {
     const registry = new LobbyRegistry();
     const { code } = registry.createRoom("host", "Alice");

@@ -32,6 +32,9 @@ object Protocol {
     /** Progression des confirmations de révélation (X sur Y ont validé). */
     const val EVENT_GAME_REVEAL_ACK = "game:revealAck"
 
+    /** La partie est annulée (plus assez de joueurs) : retour au salon. */
+    const val EVENT_GAME_CANCELLED = "game:cancelled"
+
     // --- Client -> hôte (via relay:toHost) ---
 
     /** L'invité a terminé sa révélation (acknowledgement). */
@@ -46,6 +49,9 @@ object Protocol {
     /** La devinette de l'Inconnu (validée ou non par le groupe). */
     const val EVENT_PLAYER_GUESS = "player:guess"
 
+    /** Le serveur signale à l'hôte qu'un invité s'est déconnecté. */
+    const val EVENT_PLAYER_DISCONNECTED = "player:disconnected"
+
     /** Tous les événements serveur -> client que le client doit écouter. */
     val SERVER_TO_CLIENT_EVENTS = listOf(
         EVENT_GAME_START,
@@ -54,7 +60,8 @@ object Protocol {
         EVENT_GAME_PHASE,
         EVENT_GAME_ELIMINATION,
         EVENT_GAME_RESULT,
-        EVENT_GAME_REVEAL_ACK
+        EVENT_GAME_REVEAL_ACK,
+        EVENT_GAME_CANCELLED
     )
 
     /**
@@ -66,7 +73,8 @@ object Protocol {
         EVENT_PLAYER_REVEAL,
         EVENT_PLAYER_VOTE,
         EVENT_PLAYER_READY,
-        EVENT_PLAYER_GUESS
+        EVENT_PLAYER_GUESS,
+        EVENT_PLAYER_DISCONNECTED
     )
 
     // --- Constantes de phase (payload de game:phase) ---

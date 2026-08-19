@@ -184,24 +184,6 @@ fun ResultScreen(
 }
 
 @Composable
-private fun ScrimTextButton(
-    text: String,
-    onClick: () -> Unit,
-    modifier: Modifier = Modifier
-) {
-    Text(
-        text = text,
-        modifier = modifier
-            .clip(RoundedCornerShape(12.dp))
-            .clickable(onClick = onClick)
-            .background(Color.Black.copy(alpha = 0.45f))
-            .padding(horizontal = 12.dp, vertical = 6.dp),
-        style = MaterialTheme.typography.bodyMedium,
-        color = Color.White
-    )
-}
-
-@Composable
 private fun RankBadge(rank: Int) {
     if (rank !in 1..3) {
         Spacer(Modifier.width(28.dp))

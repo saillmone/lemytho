@@ -1,6 +1,7 @@
 package com.lemytho.app.ui.screens
 
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
@@ -8,7 +9,12 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.Help
 import androidx.compose.material3.Button
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
@@ -26,7 +32,11 @@ import com.lemytho.app.ui.theme.UnknownWhite
 import com.lemytho.app.ui.theme.SpecialElite
 
 @Composable
-fun HomeScreen(onNewGame: () -> Unit, onMultiplayer: () -> Unit) {
+fun HomeScreen(
+    onNewGame: () -> Unit,
+    onMultiplayer: () -> Unit,
+    onRules: () -> Unit
+) {
     Box(modifier = Modifier.fillMaxSize()) {
         Image(
             painter = painterResource(id = R.drawable.home_bg),
@@ -80,6 +90,21 @@ fun HomeScreen(onNewGame: () -> Unit, onMultiplayer: () -> Unit) {
             }
 
             Spacer(Modifier.weight(1f))
+        }
+
+        // Accès aux règles : petite icône ronde en haut à droite.
+        IconButton(
+            onClick = onRules,
+            modifier = Modifier
+                .align(Alignment.TopEnd)
+                .padding(12.dp)
+                .background(Color.Black.copy(alpha = 0.4f), CircleShape)
+        ) {
+            Icon(
+                imageVector = Icons.AutoMirrored.Filled.Help,
+                contentDescription = "Règles",
+                tint = Color.White
+            )
         }
     }
 }

@@ -1,0 +1,64 @@
+name: Déployer l'APK
+
+on:
+  push:
+    branches: [ main ]
+    paths:
+      - "app/**"
+      - "gradle/**"
+      - "gradlew"
+      - "gradlew.bat"
+      - "build.gradle.kts"
+      - "settings.gradle.kts"
+      - "gradle.properties"
+      - ".github/workflows/apk.yml"
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-apk
+  cancel-in-progress: false
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v5
+
+      - name: Make gradlew executable
+        run: chmod +x gradlew
+
+      - name: Build debug APK
+        run: ./gradlew assembleDebug
+
+      - name: Rename APK
+        run: |
+          APK=$(ls app/build/outputs/apk/debug/*.apk | head -n 1)
+          cp "$APK" LeMytho-latest.apk
+
+      - name: Deploy APK on VPS
+        env:
+          LEMYTHO_HOST: ${{ secrets.LEMYTHO_HOST }}
+          LEMYTHO_USER: ${{ secrets.LEMYTHO_USER }}
+          LEMYTHO_SSH_KEY: ${{ secrets.LEMYTHO_SSH_KEY }}
+        run: |
+          mkdir -p ~/.ssh
+          chmod 700 ~/.ssh
+          echo "$LEMYTHO_SSH_KEY" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          ssh-keyscan -H "$LEMYTHO_HOST" >> ~/.ssh/known_hosts 2>/dev/null
+          ssh -i ~/.ssh/deploy_key \
+              -o StrictHostKeyChecking=accept-new \
+              "$LEMYTHO_USER@$LEMYTHO_HOST" 'mkdir -p "$HOME/lemytho/apk"'
+          scp -i ~/.ssh/deploy_key \
+              -o StrictHostKeyChecking=accept-new \
+              LeMytho-latest.apk "$LEMYTHO_USER@$LEMYTHO_HOST:~/lemytho/apk/LeMytho-latest.apk"

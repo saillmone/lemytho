@@ -1,7 +1,6 @@
 package com.lemytho.app.ui.screens
 
 import android.content.Intent
-import android.net.Uri
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -69,6 +68,7 @@ fun MultiplayerNavHost(
     state: MultiplayerUiState,
     onBack: () -> Unit,
     onUpdateServerUrl: (String) -> Unit,
+    onResetServerUrl: () -> Unit,
     onUpdatePseudo: (String) -> Unit,
     onRandomPseudo: () -> Unit,
     onStartHosting: () -> Unit,
@@ -95,6 +95,7 @@ fun MultiplayerNavHost(
             onUpdatePseudo = onUpdatePseudo,
             onRandomPseudo = onRandomPseudo,
             onUpdateServerUrl = onUpdateServerUrl,
+            onResetServerUrl = onResetServerUrl,
             onStartHosting = onStartHosting,
             onGoToJoin = onGoToJoin,
             onBack = onBack
@@ -113,7 +114,7 @@ fun MultiplayerNavHost(
         MultiplayerScreen.HostSetup -> HostSetupScreen(
             categories = state.categories,
             selectedCategory = state.selectedCategory,
-            memberCount = state.members.count { it.ready || it.isHost },
+            memberCount = state.members.count { (it.ready || it.isHost) && it.connected },
             threePlayerIsUnknown = state.threePlayerIsUnknown,
             onCategoryChange = onSetCategory,
             onThreePlayerIsUnknownChange = onSetThreePlayerIsUnknown,
@@ -135,6 +136,7 @@ fun MultiplayerNavHost(
             code = state.lobbyCode,
             members = state.members,
             myPlayerId = state.myPlayerId,
+            error = state.error,
             onSetReady = onSetReady,
             onBack = onBack
         )
@@ -208,6 +210,7 @@ private fun MultiplayerMenuScreen(
     onUpdatePseudo: (String) -> Unit,
     onRandomPseudo: () -> Unit,
     onUpdateServerUrl: (String) -> Unit,
+    onResetServerUrl: () -> Unit,
     onStartHosting: () -> Unit,
     onGoToJoin: () -> Unit,
     onBack: () -> Unit
@@ -279,6 +282,13 @@ private fun MultiplayerMenuScreen(
                 label = { Text("Adresse du serveur") },
                 modifier = Modifier.fillMaxWidth()
             )
+            Spacer(Modifier.height(8.dp))
+            TextButton(
+                onClick = onResetServerUrl,
+                modifier = Modifier.align(Alignment.End)
+            ) {
+                Text("Rétablir l'URL par défaut")
+            }
             Spacer(Modifier.height(8.dp))
         }
 
@@ -402,7 +412,7 @@ private fun HostLobbyScreen(
             enabled = readyCount >= 3,
             modifier = Modifier.fillMaxWidth()
         ) {
-            Text("Lancer la partie", fontSize = 18.sp)
+            Text("Configurer la partie", fontSize = 18.sp)
         }
 
         Spacer(Modifier.height(8.dp))
@@ -410,8 +420,7 @@ private fun HostLobbyScreen(
         ScrimTextButton(
             text = "Quitter",
             onClick = { showQuitConfirm = true },
-            modifier = Modifier.fillMaxWidth(),
-            textAlign = TextAlign.Center
+            modifier = Modifier.align(Alignment.CenterHorizontally)
         )
     }
 
@@ -560,7 +569,11 @@ private fun HostSetupScreen(
         Spacer(Modifier.height(16.dp))
 
         ScrimText(
-            text = "Répartition : ${roleDistributionLabel(memberCount, threePlayerIsUnknown)}",
+            text = if (memberCount >= 3) {
+                "Répartition : ${roleDistributionLabel(memberCount, threePlayerIsUnknown)}"
+            } else {
+                "En attente d'au moins 3 joueurs prêts…"
+            },
             style = MaterialTheme.typography.bodyMedium,
             textAlign = TextAlign.Center,
             modifier = Modifier.fillMaxWidth()
@@ -580,8 +593,7 @@ private fun HostSetupScreen(
         ScrimTextButton(
             text = "Retour",
             onClick = onBack,
-            modifier = Modifier.fillMaxWidth(),
-            textAlign = TextAlign.Center
+            modifier = Modifier.align(Alignment.CenterHorizontally)
         )
     }
 }
@@ -663,8 +675,7 @@ private fun JoinLobbyScreen(
         ScrimTextButton(
             text = "Retour",
             onClick = onBack,
-            modifier = Modifier.fillMaxWidth(),
-            textAlign = TextAlign.Center
+            modifier = Modifier.align(Alignment.CenterHorizontally)
         )
     }
 }
@@ -676,6 +687,7 @@ private fun WaitingScreen(
     code: String?,
     members: List<LobbyMember>,
     myPlayerId: Int?,
+    error: String?,
     onSetReady: (Boolean) -> Unit,
     onBack: () -> Unit
 ) {
@@ -736,6 +748,17 @@ private fun WaitingScreen(
             )
         }
 
+        if (error != null) {
+            Spacer(Modifier.height(12.dp))
+            ScrimText(
+                text = error,
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.error,
+                textAlign = TextAlign.Center,
+                modifier = Modifier.fillMaxWidth()
+            )
+        }
+
         Spacer(Modifier.height(24.dp))
 
         ScrimText(
@@ -752,8 +775,7 @@ private fun WaitingScreen(
         ScrimTextButton(
             text = "Quitter",
             onClick = { showQuitConfirm = true },
-            modifier = Modifier.fillMaxWidth(),
-            textAlign = TextAlign.Center
+            modifier = Modifier.align(Alignment.CenterHorizontally)
         )
     }
 
@@ -822,6 +844,7 @@ private fun MemberList(members: List<LobbyMember>, myPlayerId: Int?) {
                 member.isHost -> " (Maître du Jeu)"
                 else -> ""
             }
+            val disconnected = if (!member.connected) " (déconnecté)" else ""
             Row(
                 verticalAlignment = Alignment.CenterVertically,
                 modifier = Modifier.fillMaxWidth()
@@ -834,7 +857,7 @@ private fun MemberList(members: List<LobbyMember>, myPlayerId: Int?) {
                 )
                 Spacer(Modifier.width(8.dp))
                 ScrimText(
-                    text = "${member.pseudo}$suffix",
+                    text = "${member.pseudo}$suffix$disconnected",
                     style = MaterialTheme.typography.bodyLarge
                 )
             }
@@ -871,26 +894,6 @@ private fun ConnectionStatusText(status: ConnectionStatus) {
 }
 
 @Composable
-private fun ScrimTextButton(
-    text: String,
-    onClick: () -> Unit,
-    modifier: Modifier = Modifier,
-    textAlign: TextAlign? = null
-) {
-    Text(
-        text = text,
-        modifier = modifier
-            .clip(RoundedCornerShape(12.dp))
-            .clickable(onClick = onClick)
-            .background(Color.Black.copy(alpha = 0.45f))
-            .padding(horizontal = 12.dp, vertical = 6.dp),
-        style = MaterialTheme.typography.bodyMedium,
-        textAlign = textAlign,
-        color = Color.White
-    )
-}
-
-@Composable
 private fun RoleChoiceButton(
     label: String,
     selected: Boolean,
@@ -908,9 +911,12 @@ private fun RoleChoiceButton(
     }
 }
 
-/** Message d'invitation : contient le code ET le lien cliquable, au choix. */
+/** Message d'invitation : contient le code ET le lien cliquable (https). */
 private fun buildInvitationMessage(code: String?, serverUrl: String): String {
     val c = code ?: ""
-    val link = "lemytho://join?code=$c&server=${Uri.encode(serverUrl)}"
+    // Lien https universellement cliquable (mail/SMS) : la landing page /join
+    // fait le pont vers l'app (deep link) ou le client web. Un schéma custom
+    // lemytho:// ne serait pas reconnu comme lien cliquable par les clients mail.
+    val link = "${serverUrl.trimEnd('/')}/join?code=$c"
     return "Rejoins ma partie Le Mytho !\nCode : $c\n$link"
 }

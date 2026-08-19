@@ -1,0 +1,19 @@
+{
+  "name": "lemytho-web",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Client web invité Le Mytho (rejoint une partie hébergée par l'app Android)",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc -p tsconfig.json && vite build",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "socket.io-client": "^4.8.3"
+  },
+  "devDependencies": {
+    "typescript": "^7.0.2",
+    "vite": "^6.3.5"
+  }
+}

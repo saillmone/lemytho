@@ -72,4 +72,9 @@ class HostSession(private val connectionManager: ConnectionManager) {
             GameProtocol.resultPayload(players, victory, totalScores)
         )
     }
+
+    /** Annule la partie et renvoie les invités au salon (plus assez de joueurs). */
+    fun sendCancelled() {
+        connectionManager.broadcast(Protocol.EVENT_GAME_CANCELLED, org.json.JSONObject())
+    }
 }

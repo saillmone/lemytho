@@ -5,6 +5,7 @@ on:
     branches: [ main ]
     paths:
       - "server/**"
+      - "web/**"
       - "docker-compose.prod.yml"
       - ".github/workflows/deploy.yml"
   workflow_dispatch:
@@ -40,6 +41,7 @@ jobs:
             git -C "$REPO_DIR" reset --hard origin/main
           fi
           cd "$REPO_DIR"
+          mkdir -p apk
           docker compose -f docker-compose.prod.yml up -d --build --remove-orphans
           docker image prune -f
           REMOTE

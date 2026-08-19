@@ -7,6 +7,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -17,6 +18,7 @@ import com.lemytho.app.ui.screens.HomeScreen
 import com.lemytho.app.ui.screens.PlayersScreen
 import com.lemytho.app.ui.screens.ResultScreen
 import com.lemytho.app.ui.screens.RevealScreen
+import com.lemytho.app.ui.screens.RulesScreen
 import com.lemytho.app.ui.screens.SetupScreen
 import com.lemytho.app.ui.screens.EliminationScreen
 import com.lemytho.app.ui.screens.MultiplayerNavHost
@@ -36,6 +38,14 @@ fun LeMythoAppRoot(
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
 
+    // Annulation de partie (plus assez de joueurs) : l'hôte rejoint son salon.
+    LaunchedEffect(state.hostAborted) {
+        if (state.hostAborted) {
+            multiplayerViewModel.abortToLobby("Partie annulée : plus assez de joueurs")
+            viewModel.acknowledgeAbort()
+        }
+    }
+
     Surface(
         modifier = Modifier
             .fillMaxSize()
@@ -45,7 +55,12 @@ fun LeMythoAppRoot(
         when (state.currentScreen) {
             Screen.Home -> HomeScreen(
                 onNewGame = { viewModel.navigate(Screen.Setup) },
-                onMultiplayer = { viewModel.navigate(Screen.Multiplayer) }
+                onMultiplayer = { viewModel.navigate(Screen.Multiplayer) },
+                onRules = { viewModel.navigate(Screen.Rules) }
+            )
+
+            Screen.Rules -> RulesScreen(
+                onClose = { viewModel.navigate(Screen.Home) }
             )
 
             Screen.Setup -> SetupScreen(
@@ -182,6 +197,7 @@ fun LeMythoAppRoot(
                         viewModel.navigate(Screen.Home)
                     },
                     onUpdateServerUrl = multiplayerViewModel::updateServerUrl,
+                    onResetServerUrl = multiplayerViewModel::resetServerUrl,
                     onUpdatePseudo = multiplayerViewModel::updatePseudo,
                     onRandomPseudo = multiplayerViewModel::randomPseudo,
                     onStartHosting = multiplayerViewModel::startHosting,

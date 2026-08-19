@@ -34,4 +34,6 @@ class AppContainer(context: Context) {
     val connectionManager: ConnectionManager = ConnectionManager()
 
     val pseudoStore: PseudoStore = PseudoStore(context)
+
+    val serverStore: ServerStore = ServerStore(context)
 }

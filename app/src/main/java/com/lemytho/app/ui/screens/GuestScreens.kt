@@ -152,7 +152,7 @@ fun RevealOwnScreen(
                         if (isUnknown) {
                             Column(
                                 horizontalAlignment = Alignment.CenterHorizontally,
-                                modifier = Modifier.offset(y = (-88).dp)
+                                modifier = Modifier.offset(y = (-128).dp)
                             ) {
                                 ScrimText(
                                     text = "Tu es l'Inconnu",
@@ -587,24 +587,6 @@ fun GuestResultScreen(
     }
 }
 // --- Helpers (dupliqués volontairement pour des écrans stateless autonomes) ---
-
-@Composable
-private fun ScrimTextButton(
-    text: String,
-    onClick: () -> Unit,
-    modifier: Modifier = Modifier
-) {
-    Text(
-        text = text,
-        modifier = modifier
-            .clip(RoundedCornerShape(12.dp))
-            .clickable(onClick = onClick)
-            .background(Color.Black.copy(alpha = 0.45f))
-            .padding(horizontal = 12.dp, vertical = 6.dp),
-        style = MaterialTheme.typography.bodyMedium,
-        color = Color.White
-    )
-}
 
 @Composable
 private fun RankBadge(rank: Int) {

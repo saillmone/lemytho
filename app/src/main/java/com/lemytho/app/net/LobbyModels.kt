@@ -15,7 +15,8 @@ data class LobbyMember(
     val playerId: Int,
     val pseudo: String,
     val isHost: Boolean,
-    val ready: Boolean = false
+    val ready: Boolean = false,
+    val connected: Boolean = true
 )
 
 /** Événement reçu du serveur, exposé aux ViewModels via un Flow. */
@@ -52,7 +53,8 @@ fun parseMembers(array: JSONArray?): List<LobbyMember> {
                     playerId = m.optInt("playerId"),
                     pseudo = m.optString("pseudo"),
                     isHost = m.optBoolean("isHost"),
-                    ready = m.optBoolean("ready")
+                    ready = m.optBoolean("ready"),
+                    connected = m.optBoolean("connected", true)
                 )
             )
         }

@@ -356,7 +356,7 @@ class GameViewModel(
         viewModelScope.launch {
             val state = _uiState.value
             val isReplay = hostSession != null
-            val playing = members.filter { it.ready || it.isHost }
+            val playing = members.filter { (it.ready || it.isHost) && it.connected }
             if (playing.size < 3) return@launch
             val wordPair = wordRepository.getRandomPair(category) ?: return@launch
             val roles = gameEngine.assignRoles(playing.size, threePlayerIsUnknown)
@@ -426,7 +426,65 @@ class GameViewModel(
         when (event.name) {
             Protocol.EVENT_PLAYER_REVEAL -> onGuestReveal(event.data.optInt("playerId"))
             Protocol.EVENT_PLAYER_VOTE -> onGuestVote(event.data.optInt("playerId"), event.data.optInt("targetId"))
+            Protocol.EVENT_PLAYER_DISCONNECTED -> onPlayerDisconnected(event.data.optInt("playerId"))
         }
+    }
+
+    /**
+     * Un invité s'est déconnecté en cours de partie. On le retire/élimine pour
+     * ne pas bloquer la manche : silencieusement pendant la révélation (le rôle
+     * n'est pas encore joué), avec révélation du rôle sinon (option A).
+     * Si le nombre de joueurs tombe sous 3, la partie est annulée.
+     */
+    private fun onPlayerDisconnected(playerId: Int) {
+        if (!_uiState.value.multiplayerHost) return
+        _uiState.update { state ->
+            val target = state.players.firstOrNull { it.id == playerId } ?: return@update state
+            if (target.status == PlayerStatus.ELIMINATED) return@update state
+
+            if (state.currentScreen == Screen.Reveal) {
+                val remaining = state.players.filter { it.id != playerId }
+                if (remaining.size < 3) return@update abortGame(state)
+                val base = state.copy(
+                    players = remaining,
+                    revealAcks = state.revealAcks - playerId
+                )
+                if (base.revealAcks.size >= base.players.size) startCluePhase(base) else base
+            } else {
+                val updatedPlayers = state.players.map { p ->
+                    if (p.id == playerId) p.copy(status = PlayerStatus.ELIMINATED) else p
+                }
+                val remainingActive = updatedPlayers.count { it.status == PlayerStatus.ACTIVE }
+                if (remainingActive < 3) return@update abortGame(state)
+                val base = state.copy(
+                    players = updatedPlayers,
+                    votePhase = VotePhase.IDLE,
+                    votes = emptyMap(),
+                    tiedCandidates = emptySet(),
+                    elimination = EliminationEvent(target.id, target.pseudo, target.role),
+                    pendingUnknownGuess = null,
+                    currentScreen = Screen.Elimination
+                )
+                val next = finalizeVictory(base)
+                broadcastResolved(next)
+                next
+            }
+        }
+    }
+
+    /** Annule la partie (plus assez de joueurs) et renvoie tout le monde au salon. */
+    private fun abortGame(state: GameUiState): GameUiState {
+        hostSession?.sendCancelled()
+        hostSession = null
+        return GameUiState(categories = state.categories).copy(
+            currentScreen = Screen.Multiplayer,
+            hostAborted = true
+        )
+    }
+
+    /** L'écran a traité le retour au salon après annulation : on remet le signal à zéro. */
+    fun acknowledgeAbort() {
+        _uiState.update { it.copy(hostAborted = false) }
     }
 
     private fun onGuestReveal(playerId: Int) {

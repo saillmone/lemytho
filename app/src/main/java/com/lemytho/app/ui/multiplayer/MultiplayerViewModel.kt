@@ -3,9 +3,11 @@ package com.lemytho.app.ui.multiplayer
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
+import com.lemytho.app.BuildConfig
 import com.lemytho.app.data.local.WordRepository
 import com.lemytho.app.di.AppContainer
 import com.lemytho.app.di.PseudoStore
+import com.lemytho.app.di.ServerStore
 import com.lemytho.app.net.ConnectionManager
 import com.lemytho.app.net.GameProtocol
 import com.lemytho.app.net.LobbyResult
@@ -30,15 +32,21 @@ import org.json.JSONObject
 class MultiplayerViewModel(
     private val connectionManager: ConnectionManager,
     private val wordRepository: WordRepository,
-    private val pseudoStore: PseudoStore
+    private val pseudoStore: PseudoStore,
+    private val serverStore: ServerStore
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(MultiplayerUiState())
     val uiState: StateFlow<MultiplayerUiState> = _uiState.asStateFlow()
 
     init {
-        // Pré-remplit le pseudo avec le dernier utilisé.
-        _uiState.update { it.copy(myPseudo = pseudoStore.load()) }
+        // Pré-remplit le pseudo et l'URL du serveur avec les dernières valeurs.
+        _uiState.update {
+            it.copy(
+                myPseudo = pseudoStore.load(),
+                serverUrl = serverStore.load() ?: it.serverUrl
+            )
+        }
         viewModelScope.launch {
             connectionManager.status.collect { status ->
                 _uiState.update { it.copy(connectionStatus = status) }
@@ -55,7 +63,15 @@ class MultiplayerViewModel(
     }
 
     fun updateServerUrl(url: String) {
-        _uiState.update { it.copy(serverUrl = url.trim()) }
+        val trimmed = url.trim()
+        _uiState.update { it.copy(serverUrl = trimmed) }
+        serverStore.save(trimmed)
+    }
+
+    /** Rétablit l'URL du serveur par défaut (et l'oublie des préférences). */
+    fun resetServerUrl() {
+        serverStore.clear()
+        _uiState.update { it.copy(serverUrl = BuildConfig.SERVER_URL) }
     }
 
     fun updatePseudo(pseudo: String) {
@@ -72,6 +88,13 @@ class MultiplayerViewModel(
 
     fun goToHost() {
         _uiState.update { it.copy(screen = MultiplayerScreen.HostLobby, error = null) }
+    }
+
+    /** Retour au salon de l'hôte après une annulation de partie, avec un message. */
+    fun abortToLobby(message: String) {
+        _uiState.update {
+            it.copy(screen = MultiplayerScreen.HostLobby, isHost = true, error = message)
+        }
     }
 
     fun goToJoin() {
@@ -249,10 +272,13 @@ class MultiplayerViewModel(
         }
     }
 
-    /** Déconnecte et réinitialise l'état multijoueur. */
+    /** Déconnecte et réinitialise l'état multijoueur, en conservant pseudo et URL mémorisés. */
     fun quit() {
         connectionManager.disconnect()
-        _uiState.value = MultiplayerUiState()
+        _uiState.value = MultiplayerUiState(
+            myPseudo = pseudoStore.load(),
+            serverUrl = serverStore.load() ?: BuildConfig.SERVER_URL
+        )
     }
 
     private fun handleEvent(event: ServerEvent) {
@@ -347,6 +373,25 @@ class MultiplayerViewModel(
                 }
             }
 
+            Protocol.EVENT_GAME_CANCELLED -> {
+                // Plus assez de joueurs : retour au salon avec un message.
+                _uiState.update {
+                    it.copy(
+                        screen = MultiplayerScreen.Waiting,
+                        error = "Partie annulée : plus assez de joueurs",
+                        inRound = false,
+                        myRole = null,
+                        myWord = null,
+                        revealConfirmed = false,
+                        board = null,
+                        elimination = null,
+                        guestResult = null,
+                        hasVoted = false,
+                        wantsReplay = false
+                    )
+                }
+            }
+
             // game:start et game:phase n'ont pas d'action directe ici.
             else -> Unit
         }
@@ -364,7 +409,8 @@ class MultiplayerViewModelFactory(
             return MultiplayerViewModel(
                 connectionManager = container.connectionManager,
                 wordRepository = container.wordRepository,
-                pseudoStore = container.pseudoStore
+                pseudoStore = container.pseudoStore,
+                serverStore = container.serverStore
             ) as T
         }
         throw IllegalArgumentException("Unknown ViewModel class: ${modelClass.name}")

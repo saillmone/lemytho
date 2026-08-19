@@ -108,7 +108,7 @@ fun RevealScreen(
             ) {
                 if (isRevealed) {
                     if (isUnknown) {
-                        ScrimCard(modifier = Modifier.offset(y = (-88).dp)) {
+                        ScrimCard(modifier = Modifier.offset(y = (-128).dp)) {
                             Text(
                                 text = "Tu es l'Inconnu",
                                 style = MaterialTheme.typography.displaySmall,

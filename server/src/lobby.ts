@@ -17,6 +17,8 @@ export interface Member {
   pseudo: string;
   socketId: string;
   ready: boolean;
+  /** Identifiant stable du navigateur : permet de reprendre la connexion après un verrouillage d'écran. */
+  clientId?: string;
 }
 
 /** Représentation publique d'un membre, envoyée aux clients (sans socketId). */
@@ -25,6 +27,8 @@ export interface PublicMember {
   pseudo: string;
   isHost: boolean;
   ready: boolean;
+  /** Faux pendant une déconnexion brève (invité web en attente de reprise). */
+  connected: boolean;
 }
 
 /** Salon : un hôte (playerId = 1) et une liste de membres. */
@@ -77,6 +81,7 @@ export class LobbyRegistry {
     code: string,
     pseudo: string,
     socketId: string,
+    clientId?: string,
   ): { playerId: number; members: PublicMember[] } {
     const room = this.rooms.get(code);
     if (!room) {
@@ -88,8 +93,44 @@ export class LobbyRegistry {
     }
     const playerId = room.nextPlayerId;
     room.nextPlayerId += 1;
-    room.members.push({ playerId, pseudo, socketId, ready: false });
+    room.members.push({ playerId, pseudo, socketId, ready: false, clientId });
     return { playerId, members: this.publicMembers(room) };
+  }
+
+  /**
+   * Reprend la connexion d'un invité après une déconnexion brève (écran verrouillé,
+   * onglet suspendu). Ré-associe la nouvelle socket au membre existant identifié par
+   * [clientId], en conservant son playerId. Retourne null si aucune reprise possible.
+   */
+  rejoinRoom(
+    code: string,
+    clientId: string,
+    socketId: string,
+  ): { playerId: number; members: PublicMember[] } | null {
+    const room = this.rooms.get(code);
+    if (!room) return null;
+    const member = room.members.find((m) => m.clientId === clientId && m.socketId === "");
+    if (!member) return null;
+    member.socketId = socketId;
+    return { playerId: member.playerId, members: this.publicMembers(room) };
+  }
+
+  /**
+   * Retire définitivement un membre en attente de reprise (délai écoulé sans
+   * reconnexion). Ne cible que les membres dont la socket est déjà déconnectée.
+   */
+  leaveByClientId(clientId: string): LeaveResult | null {
+    for (const room of this.rooms.values()) {
+      const member = room.members.find((m) => m.clientId === clientId && m.socketId === "");
+      if (!member) continue;
+      room.members = room.members.filter((m) => m !== member);
+      if (room.members.length === 0) {
+        this.rooms.delete(room.code);
+        return { code: room.code, wasHost: true, members: [] };
+      }
+      return { code: room.code, wasHost: false, members: this.publicMembers(room) };
+    }
+    return null;
   }
 
   /** Met à jour le statut « prêt » d'un membre. Retourne le salon mis à jour, ou null. */
@@ -102,10 +143,12 @@ export class LobbyRegistry {
     return { code: room.code, members: this.publicMembers(room) };
   }
 
-  /** Remet tous les membres en « non prêt » (début de partie). */
+  /** Remet les invités en « non prêt » (début de partie). L'hôte reste toujours prêt. */
   resetReady(room: Room): void {
     room.members.forEach((m) => {
-      m.ready = false;
+      if (m.socketId !== room.hostSocketId) {
+        m.ready = false;
+      }
     });
   }
 
@@ -159,6 +202,7 @@ export class LobbyRegistry {
       pseudo: m.pseudo,
       isHost: m.socketId === room.hostSocketId,
       ready: m.ready,
+      connected: m.socketId !== "",
     }));
   }
 

@@ -111,23 +111,3 @@ fun PlayersScreen(
         }
     }
 }
-
-@Composable
-private fun ScrimTextButton(
-    text: String,
-    onClick: () -> Unit,
-    modifier: Modifier = Modifier,
-    textAlign: TextAlign? = null
-) {
-    Text(
-        text = text,
-        modifier = modifier
-            .clip(RoundedCornerShape(12.dp))
-            .clickable(onClick = onClick)
-            .background(Color.Black.copy(alpha = 0.45f))
-            .padding(horizontal = 12.dp, vertical = 6.dp),
-        style = MaterialTheme.typography.bodyMedium,
-        textAlign = textAlign,
-        color = Color.White
-    )
-}

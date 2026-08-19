@@ -29,5 +29,12 @@ keystore.properties
 /server/node_modules/
 /server/dist/
 
+# Client web (invité)
+/web/node_modules/
+/web/dist/
+
+# APK téléchargeable (déployé par la CI sur le VPS)
+/apk/
+
 # OS
 Thumbs.db
