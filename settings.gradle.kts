@@ -20,5 +20,5 @@ dependencyResolutionManagement {
     }
 }
 
-rootProject.name = "OpenCover"
+rootProject.name = "LeMytho"
 include(":app")

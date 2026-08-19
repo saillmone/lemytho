@@ -1,9 +1,9 @@
-OpenCover est un jeu de société de rôles cachés à jouer entre amis, en local (un téléphone que l'on se passe) ou en ligne (un hôte + des invités).
+Le Mytho est un jeu de société de rôles cachés à jouer entre amis, en local (un téléphone que l'on se passe) ou en ligne (un hôte + des invités).
 
 Chaque joueur reçoit secrètement un rôle :
-- <b>Civil</b> : il connaît le mot secret et doit démasquer les intrus.
-- <b>Infiltré</b> : il connaît un mot proche mais différent, et doit se fondre dans la masse.
-- <b>Mr White</b> : il ne connaît aucun mot et doit bluffer pour survivre.
+- <b>Citoyen</b> : il connaît le mot secret et doit démasquer les intrus.
+- <b>Imposteur</b> : il connaît un mot proche mais différent, et doit se fondre dans la masse.
+- <b>l'Inconnu</b> : il ne connaît aucun mot et doit bluffer pour survivre.
 
 Déroulement d'une manche :
 1. Chacun révèle son rôle en secret.

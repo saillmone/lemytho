@@ -1,14 +1,14 @@
 #!/usr/bin/env bash
 # =============================================================================
-# Configuration nginx + HTTPS (certbot) pour OpenCover sur le VPS.
+# Configuration nginx + HTTPS (certbot) pour Le Mytho sur le VPS.
 # À exécuter UNE SEULE FOIS, avec sudo, une fois le domaine DuckDNS créé.
 #
 # Usage : sudo bash nginx-setup.sh [domaine] [email]
-#   ex.  : sudo bash nginx-setup.sh opencover.duckdns.org toi@exemple.com
+#   ex.  : sudo bash nginx-setup.sh lemytho.duckdns.org toi@exemple.com
 # =============================================================================
 set -euo pipefail
 
-DOMAIN="${1:-opencover.duckdns.org}"
+DOMAIN="${1:-lemytho.duckdns.org}"
 EMAIL="${2:-}"
 
 echo "==> Domaine : $DOMAIN"
@@ -24,7 +24,7 @@ echo "==> $DOMAIN résout vers $RESOLVED"
 
 # 1. Vhost HTTP (certbot ajoutera lui-même la partie HTTPS ensuite).
 echo "==> Création du vhost nginx"
-cat > "/etc/nginx/sites-available/opencover" <<EOF
+cat > "/etc/nginx/sites-available/lemytho" <<EOF
 server {
     listen 80;
     listen [::]:80;
@@ -45,7 +45,7 @@ server {
 }
 EOF
 
-ln -sf "/etc/nginx/sites-available/opencover" "/etc/nginx/sites-enabled/opencover"
+ln -sf "/etc/nginx/sites-available/lemytho" "/etc/nginx/sites-enabled/lemytho"
 
 nginx -t
 

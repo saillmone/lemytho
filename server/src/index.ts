@@ -6,7 +6,7 @@ const PORT = Number(process.env.PORT ?? 3000);
 
 const httpServer = createServer((_req, res) => {
   res.writeHead(200, { "Content-Type": "text/plain; charset=utf-8" });
-  res.end("OpenCover relay server");
+  res.end("Le Mytho relay server");
 });
 
 const io = new Server(httpServer, {
@@ -157,7 +157,7 @@ io.on("connection", (socket) => {
 });
 
 httpServer.listen(PORT, () => {
-  console.log(`OpenCover relay server listening on port ${PORT}`);
+  console.log(`Le Mytho relay server listening on port ${PORT}`);
 });
 
 // Fermeture propre (reload tsx watch / arrêt manuel) : libère le port avant

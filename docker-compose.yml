@@ -7,7 +7,7 @@ services:
     expose:
       - "3000"
     networks:
-      - opencover
+      - lemytho
 
   caddy:
     image: caddy:2-alpine
@@ -16,7 +16,7 @@ services:
       - "80:80"
       - "443:443"
     environment:
-      OPENCOVER_DOMAIN: ${OPENCOVER_DOMAIN:-opencover.example.com}
+      LEMYTHO_DOMAIN: ${LEMYTHO_DOMAIN:-lemytho.example.com}
     volumes:
       - ./Caddyfile:/etc/caddy/Caddyfile:ro
       - caddy_data:/data
@@ -24,10 +24,10 @@ services:
     depends_on:
       - server
     networks:
-      - opencover
+      - lemytho
 
 networks:
-  opencover:
+  lemytho:
 
 volumes:
   caddy_data:

@@ -1,5 +1,5 @@
 # =============================================================================
-# Déploiement production — relais OpenCover derrière un nginx existant.
+# Déploiement production — relais Le Mytho derrière un nginx existant.
 #
 # Ici on ne lance QUE le relais (pas de Caddy) : le nginx du VPS fait déjà le
 # reverse proxy et le HTTPS (certbot). Le relais est exposé uniquement sur

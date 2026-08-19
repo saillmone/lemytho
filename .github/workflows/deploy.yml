@@ -19,22 +19,22 @@ jobs:
     steps:
       - name: Déployer sur le VPS
         env:
-          OPENCOVER_HOST: ${{ secrets.OPENCOVER_HOST }}
-          OPENCOVER_USER: ${{ secrets.OPENCOVER_USER }}
-          OPENCOVER_SSH_KEY: ${{ secrets.OPENCOVER_SSH_KEY }}
+          LEMYTHO_HOST: ${{ secrets.LEMYTHO_HOST }}
+          LEMYTHO_USER: ${{ secrets.LEMYTHO_USER }}
+          LEMYTHO_SSH_KEY: ${{ secrets.LEMYTHO_SSH_KEY }}
         run: |
           mkdir -p ~/.ssh
           chmod 700 ~/.ssh
-          echo "$OPENCOVER_SSH_KEY" > ~/.ssh/deploy_key
+          echo "$LEMYTHO_SSH_KEY" > ~/.ssh/deploy_key
           chmod 600 ~/.ssh/deploy_key
-          ssh-keyscan -H "$OPENCOVER_HOST" >> ~/.ssh/known_hosts 2>/dev/null
+          ssh-keyscan -H "$LEMYTHO_HOST" >> ~/.ssh/known_hosts 2>/dev/null
           ssh -i ~/.ssh/deploy_key \
               -o StrictHostKeyChecking=accept-new \
-              "$OPENCOVER_USER@$OPENCOVER_HOST" 'bash -s' <<'REMOTE'
+              "$LEMYTHO_USER@$LEMYTHO_HOST" 'bash -s' <<'REMOTE'
           set -euo pipefail
-          REPO_DIR="$HOME/opencover"
+          REPO_DIR="$HOME/lemytho"
           if [ ! -d "$REPO_DIR/.git" ]; then
-            git clone https://github.com/saillmone/opencover.git "$REPO_DIR"
+            git clone https://github.com/saillmone/lemytho.git "$REPO_DIR"
           else
             git -C "$REPO_DIR" fetch origin main
             git -C "$REPO_DIR" reset --hard origin/main

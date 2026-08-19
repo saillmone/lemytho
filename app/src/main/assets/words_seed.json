@@ -2,2066 +2,2066 @@
   {
     "id": 1,
     "category": "Animaux",
-    "civilWord": "Chat",
-    "undercoverWord": "Chien",
+    "citizenWord": "Chat",
+    "impostorWord": "Chien",
     "version": 2
   },
   {
     "id": 2,
     "category": "Nature",
-    "civilWord": "Soleil",
-    "undercoverWord": "Lune",
+    "citizenWord": "Soleil",
+    "impostorWord": "Lune",
     "version": 2
   },
   {
     "id": 3,
     "category": "Lieux",
-    "civilWord": "Plage",
-    "undercoverWord": "Montagne",
+    "citizenWord": "Plage",
+    "impostorWord": "Montagne",
     "version": 2
   },
   {
     "id": 4,
     "category": "Nourriture",
-    "civilWord": "Pizza",
-    "undercoverWord": "Burger",
+    "citizenWord": "Pizza",
+    "impostorWord": "Burger",
     "version": 2
   },
   {
     "id": 5,
     "category": "Lieux",
-    "civilWord": "Cinéma",
-    "undercoverWord": "Théâtre",
+    "citizenWord": "Cinéma",
+    "impostorWord": "Théâtre",
     "version": 2
   },
   {
     "id": 6,
     "category": "Technologie",
-    "civilWord": "Ordinateur",
-    "undercoverWord": "Tablette",
+    "citizenWord": "Ordinateur",
+    "impostorWord": "Tablette",
     "version": 2
   },
   {
     "id": 7,
     "category": "Transports",
-    "civilWord": "Avion",
-    "undercoverWord": "Hélicoptère",
+    "citizenWord": "Avion",
+    "impostorWord": "Hélicoptère",
     "version": 2
   },
   {
     "id": 8,
     "category": "Transports",
-    "civilWord": "Bateau",
-    "undercoverWord": "Sous-marin",
+    "citizenWord": "Bateau",
+    "impostorWord": "Sous-marin",
     "version": 2
   },
   {
     "id": 9,
     "category": "Nature",
-    "civilWord": "Fleuve",
-    "undercoverWord": "Rivière",
+    "citizenWord": "Fleuve",
+    "impostorWord": "Rivière",
     "version": 2
   },
   {
     "id": 10,
     "category": "Métiers",
-    "civilWord": "Docteur",
-    "undercoverWord": "Infirmier",
+    "citizenWord": "Docteur",
+    "impostorWord": "Infirmier",
     "version": 2
   },
   {
     "id": 11,
     "category": "Nourriture",
-    "civilWord": "Café",
-    "undercoverWord": "Thé",
+    "citizenWord": "Café",
+    "impostorWord": "Thé",
     "version": 2
   },
   {
     "id": 12,
     "category": "Transports",
-    "civilWord": "Voiture",
-    "undercoverWord": "Bus",
+    "citizenWord": "Voiture",
+    "impostorWord": "Bus",
     "version": 2
   },
   {
     "id": 13,
     "category": "Nourriture",
-    "civilWord": "Banane",
-    "undercoverWord": "Pomme",
+    "citizenWord": "Banane",
+    "impostorWord": "Pomme",
     "version": 2
   },
   {
     "id": 14,
     "category": "Objets",
-    "civilWord": "Parfum",
-    "undercoverWord": "Déodorant",
+    "citizenWord": "Parfum",
+    "impostorWord": "Déodorant",
     "version": 2
   },
   {
     "id": 15,
     "category": "Sport",
-    "civilWord": "Adidas",
-    "undercoverWord": "Nike",
+    "citizenWord": "Adidas",
+    "impostorWord": "Nike",
     "version": 2
   },
   {
     "id": 16,
     "category": "Objets",
-    "civilWord": "Sac à dos",
-    "undercoverWord": "Valise",
+    "citizenWord": "Sac à dos",
+    "impostorWord": "Valise",
     "version": 2
   },
   {
     "id": 17,
     "category": "Lieux",
-    "civilWord": "Jacuzzi",
-    "undercoverWord": "Sauna",
+    "citizenWord": "Jacuzzi",
+    "impostorWord": "Sauna",
     "version": 2
   },
   {
     "id": 18,
     "category": "Objets",
-    "civilWord": "Baskets",
-    "undercoverWord": "Sandales",
+    "citizenWord": "Baskets",
+    "impostorWord": "Sandales",
     "version": 2
   },
   {
     "id": 19,
     "category": "Objets",
-    "civilWord": "Lunettes de soleil",
-    "undercoverWord": "Lunettes de vue",
+    "citizenWord": "Lunettes de soleil",
+    "impostorWord": "Lunettes de vue",
     "version": 2
   },
   {
     "id": 20,
     "category": "Divertissement",
-    "civilWord": "Piano",
-    "undercoverWord": "Guitare",
+    "citizenWord": "Piano",
+    "impostorWord": "Guitare",
     "version": 2
   },
   {
     "id": 21,
     "category": "Divertissement",
-    "civilWord": "Croisière",
-    "undercoverWord": "Safari",
+    "citizenWord": "Croisière",
+    "impostorWord": "Safari",
     "version": 2
   },
   {
     "id": 22,
     "category": "Nourriture",
-    "civilWord": "Sushi",
-    "undercoverWord": "Pizza",
+    "citizenWord": "Sushi",
+    "impostorWord": "Pizza",
     "version": 2
   },
   {
     "id": 23,
     "category": "Nourriture",
-    "civilWord": "Hamburger",
-    "undercoverWord": "Hot-dog",
+    "citizenWord": "Hamburger",
+    "impostorWord": "Hot-dog",
     "version": 2
   },
   {
     "id": 24,
     "category": "Nourriture",
-    "civilWord": "Chocolat",
-    "undercoverWord": "Vanille",
+    "citizenWord": "Chocolat",
+    "impostorWord": "Vanille",
     "version": 2
   },
   {
     "id": 25,
     "category": "Nourriture",
-    "civilWord": "Bière",
-    "undercoverWord": "Vin",
+    "citizenWord": "Bière",
+    "impostorWord": "Vin",
     "version": 2
   },
   {
     "id": 26,
     "category": "Nourriture",
-    "civilWord": "Whisky",
-    "undercoverWord": "Vodka",
+    "citizenWord": "Whisky",
+    "impostorWord": "Vodka",
     "version": 2
   },
   {
     "id": 27,
     "category": "Nourriture",
-    "civilWord": "Lait",
-    "undercoverWord": "Jus",
+    "citizenWord": "Lait",
+    "impostorWord": "Jus",
     "version": 2
   },
   {
     "id": 28,
     "category": "Nourriture",
-    "civilWord": "Pain",
-    "undercoverWord": "Beurre",
+    "citizenWord": "Pain",
+    "impostorWord": "Beurre",
     "version": 2
   },
   {
     "id": 29,
     "category": "Nourriture",
-    "civilWord": "Riz",
-    "undercoverWord": "Pâtes",
+    "citizenWord": "Riz",
+    "impostorWord": "Pâtes",
     "version": 2
   },
   {
     "id": 30,
     "category": "Nourriture",
-    "civilWord": "Poulet",
-    "undercoverWord": "Boeuf",
+    "citizenWord": "Poulet",
+    "impostorWord": "Boeuf",
     "version": 2
   },
   {
     "id": 31,
     "category": "Nourriture",
-    "civilWord": "Pomme",
-    "undercoverWord": "Orange",
+    "citizenWord": "Pomme",
+    "impostorWord": "Orange",
     "version": 2
   },
   {
     "id": 32,
     "category": "Nourriture",
-    "civilWord": "Banane",
-    "undercoverWord": "Fraise",
+    "citizenWord": "Banane",
+    "impostorWord": "Fraise",
     "version": 2
   },
   {
     "id": 33,
     "category": "Nourriture",
-    "civilWord": "Carotte",
-    "undercoverWord": "Brocoli",
+    "citizenWord": "Carotte",
+    "impostorWord": "Brocoli",
     "version": 2
   },
   {
     "id": 34,
     "category": "Nourriture",
-    "civilWord": "Pomme de terre",
-    "undercoverWord": "Tomate",
+    "citizenWord": "Pomme de terre",
+    "impostorWord": "Tomate",
     "version": 2
   },
   {
     "id": 35,
     "category": "Nourriture",
-    "civilWord": "Oignon",
-    "undercoverWord": "Ail",
+    "citizenWord": "Oignon",
+    "impostorWord": "Ail",
     "version": 2
   },
   {
     "id": 36,
     "category": "Nourriture",
-    "civilWord": "Sel",
-    "undercoverWord": "Poivre",
+    "citizenWord": "Sel",
+    "impostorWord": "Poivre",
     "version": 2
   },
   {
     "id": 37,
     "category": "Nourriture",
-    "civilWord": "Sucre",
-    "undercoverWord": "Miel",
+    "citizenWord": "Sucre",
+    "impostorWord": "Miel",
     "version": 2
   },
   {
     "id": 38,
     "category": "Nourriture",
-    "civilWord": "Eau",
-    "undercoverWord": "Soda",
+    "citizenWord": "Eau",
+    "impostorWord": "Soda",
     "version": 2
   },
   {
     "id": 39,
     "category": "Technologie",
-    "civilWord": "Apple",
-    "undercoverWord": "Microsoft",
+    "citizenWord": "Apple",
+    "impostorWord": "Microsoft",
     "version": 2
   },
   {
     "id": 40,
     "category": "Technologie",
-    "civilWord": "Google",
-    "undercoverWord": "Facebook",
+    "citizenWord": "Google",
+    "impostorWord": "Facebook",
     "version": 2
   },
   {
     "id": 41,
     "category": "Technologie",
-    "civilWord": "Amazon",
-    "undercoverWord": "Netflix",
+    "citizenWord": "Amazon",
+    "impostorWord": "Netflix",
     "version": 2
   },
   {
     "id": 42,
     "category": "Nourriture",
-    "civilWord": "Crêpe",
-    "undercoverWord": "Beignet",
+    "citizenWord": "Crêpe",
+    "impostorWord": "Beignet",
     "version": 2
   },
   {
     "id": 43,
     "category": "Nourriture",
-    "civilWord": "Glace",
-    "undercoverWord": "Gâteau",
+    "citizenWord": "Glace",
+    "impostorWord": "Gâteau",
     "version": 2
   },
   {
     "id": 44,
     "category": "Nourriture",
-    "civilWord": "McDonalds",
-    "undercoverWord": "KFC",
+    "citizenWord": "McDonalds",
+    "impostorWord": "KFC",
     "version": 2
   },
   {
     "id": 45,
     "category": "Transports",
-    "civilWord": "Voiture",
-    "undercoverWord": "Vélo",
+    "citizenWord": "Voiture",
+    "impostorWord": "Vélo",
     "version": 2
   },
   {
     "id": 46,
     "category": "Nature",
-    "civilWord": "Virus",
-    "undercoverWord": "Bactérie",
+    "citizenWord": "Virus",
+    "impostorWord": "Bactérie",
     "version": 2
   },
   {
     "id": 47,
     "category": "Divertissement",
-    "civilWord": "Le Seigneur des anneaux",
-    "undercoverWord": "Le Hobbit",
+    "citizenWord": "Le Seigneur des anneaux",
+    "impostorWord": "Le Hobbit",
     "version": 2
   },
   {
     "id": 48,
     "category": "Divertissement",
-    "civilWord": "Harry Potter",
-    "undercoverWord": "Lord Voldemort",
+    "citizenWord": "Harry Potter",
+    "impostorWord": "Lord Voldemort",
     "version": 2
   },
   {
     "id": 49,
     "category": "Divertissement",
-    "civilWord": "Superman",
-    "undercoverWord": "Batman",
+    "citizenWord": "Superman",
+    "impostorWord": "Batman",
     "version": 2
   },
   {
     "id": 50,
     "category": "Divertissement",
-    "civilWord": "Spiderman",
-    "undercoverWord": "Ironman",
+    "citizenWord": "Spiderman",
+    "impostorWord": "Ironman",
     "version": 2
   },
   {
     "id": 51,
     "category": "Divertissement",
-    "civilWord": "Captain America",
-    "undercoverWord": "Thor",
+    "citizenWord": "Captain America",
+    "impostorWord": "Thor",
     "version": 2
   },
   {
     "id": 52,
     "category": "Nourriture",
-    "civilWord": "Pizza",
-    "undercoverWord": "Pâtes",
+    "citizenWord": "Pizza",
+    "impostorWord": "Pâtes",
     "version": 2
   },
   {
     "id": 53,
     "category": "Sport",
-    "civilWord": "Football",
-    "undercoverWord": "Basket-ball",
+    "citizenWord": "Football",
+    "impostorWord": "Basket-ball",
     "version": 2
   },
   {
     "id": 54,
     "category": "Divertissement",
-    "civilWord": "Musique",
-    "undercoverWord": "Danse",
+    "citizenWord": "Musique",
+    "impostorWord": "Danse",
     "version": 2
   },
   {
     "id": 55,
     "category": "Animaux",
-    "civilWord": "Chien",
-    "undercoverWord": "Loup",
+    "citizenWord": "Chien",
+    "impostorWord": "Loup",
     "version": 2
   },
   {
     "id": 56,
     "category": "Nourriture",
-    "civilWord": "Pomme",
-    "undercoverWord": "Poire",
+    "citizenWord": "Pomme",
+    "impostorWord": "Poire",
     "version": 2
   },
   {
     "id": 57,
     "category": "Transports",
-    "civilWord": "Voiture",
-    "undercoverWord": "Camion",
+    "citizenWord": "Voiture",
+    "impostorWord": "Camion",
     "version": 2
   },
   {
     "id": 58,
     "category": "Objets",
-    "civilWord": "Crayon",
-    "undercoverWord": "Stylo",
+    "citizenWord": "Crayon",
+    "impostorWord": "Stylo",
     "version": 2
   },
   {
     "id": 59,
     "category": "Nourriture",
-    "civilWord": "Pizza",
-    "undercoverWord": "Lasagnes",
+    "citizenWord": "Pizza",
+    "impostorWord": "Lasagnes",
     "version": 2
   },
   {
     "id": 60,
     "category": "Technologie",
-    "civilWord": "Facebook",
-    "undercoverWord": "Instagram",
+    "citizenWord": "Facebook",
+    "impostorWord": "Instagram",
     "version": 2
   },
   {
     "id": 61,
     "category": "Objets",
-    "civilWord": "Lunettes de soleil",
-    "undercoverWord": "Lunettes de protection",
+    "citizenWord": "Lunettes de soleil",
+    "impostorWord": "Lunettes de protection",
     "version": 2
   },
   {
     "id": 62,
     "category": "Technologie",
-    "civilWord": "Ordinateur portable",
-    "undercoverWord": "Tablette",
+    "citizenWord": "Ordinateur portable",
+    "impostorWord": "Tablette",
     "version": 2
   },
   {
     "id": 63,
     "category": "Métiers",
-    "civilWord": "Docteur",
-    "undercoverWord": "Chirurgien",
+    "citizenWord": "Docteur",
+    "impostorWord": "Chirurgien",
     "version": 2
   },
   {
     "id": 64,
     "category": "Technologie",
-    "civilWord": "Bitcoin",
-    "undercoverWord": "Ethereum",
+    "citizenWord": "Bitcoin",
+    "impostorWord": "Ethereum",
     "version": 2
   },
   {
     "id": 65,
     "category": "Objets",
-    "civilWord": "Montre",
-    "undercoverWord": "Bague",
+    "citizenWord": "Montre",
+    "impostorWord": "Bague",
     "version": 2
   },
   {
     "id": 66,
     "category": "Objets",
-    "civilWord": "Bombe",
-    "undercoverWord": "Fusil",
+    "citizenWord": "Bombe",
+    "impostorWord": "Fusil",
     "version": 2
   },
   {
     "id": 67,
     "category": "Histoire",
-    "civilWord": "Einstein",
-    "undercoverWord": "Newton",
+    "citizenWord": "Einstein",
+    "impostorWord": "Newton",
     "version": 2
   },
   {
     "id": 68,
     "category": "Objets",
-    "civilWord": "Chemise",
-    "undercoverWord": "Pull",
+    "citizenWord": "Chemise",
+    "impostorWord": "Pull",
     "version": 2
   },
   {
     "id": 69,
     "category": "Sport",
-    "civilWord": "Football",
-    "undercoverWord": "Rugby",
+    "citizenWord": "Football",
+    "impostorWord": "Rugby",
     "version": 2
   },
   {
     "id": 70,
     "category": "Nature",
-    "civilWord": "Rivière",
-    "undercoverWord": "Lac",
+    "citizenWord": "Rivière",
+    "impostorWord": "Lac",
     "version": 2
   },
   {
     "id": 71,
     "category": "Nature",
-    "civilWord": "Océan",
-    "undercoverWord": "Rivière",
+    "citizenWord": "Océan",
+    "impostorWord": "Rivière",
     "version": 2
   },
   {
     "id": 72,
     "category": "Métiers",
-    "civilWord": "Professeur",
-    "undercoverWord": "Maître",
+    "citizenWord": "Professeur",
+    "impostorWord": "Maître",
     "version": 2
   },
   {
     "id": 73,
     "category": "Transports",
-    "civilWord": "Vélo",
-    "undercoverWord": "Moto",
+    "citizenWord": "Vélo",
+    "impostorWord": "Moto",
     "version": 2
   },
   {
     "id": 74,
     "category": "Nourriture",
-    "civilWord": "Sel",
-    "undercoverWord": "Sucre",
+    "citizenWord": "Sel",
+    "impostorWord": "Sucre",
     "version": 2
   },
   {
     "id": 75,
     "category": "Objets",
-    "civilWord": "Couteau",
-    "undercoverWord": "Ciseaux",
+    "citizenWord": "Couteau",
+    "impostorWord": "Ciseaux",
     "version": 2
   },
   {
     "id": 76,
     "category": "Objets",
-    "civilWord": "Chaise",
-    "undercoverWord": "Banc",
+    "citizenWord": "Chaise",
+    "impostorWord": "Banc",
     "version": 2
   },
   {
     "id": 77,
     "category": "Lieux",
-    "civilWord": "Château",
-    "undercoverWord": "Maison",
+    "citizenWord": "Château",
+    "impostorWord": "Maison",
     "version": 2
   },
   {
     "id": 78,
     "category": "Transports",
-    "civilWord": "Train",
-    "undercoverWord": "Bus",
+    "citizenWord": "Train",
+    "impostorWord": "Bus",
     "version": 2
   },
   {
     "id": 79,
     "category": "Objets",
-    "civilWord": "Miroir",
-    "undercoverWord": "Vitre",
+    "citizenWord": "Miroir",
+    "impostorWord": "Vitre",
     "version": 2
   },
   {
     "id": 80,
     "category": "Animaux",
-    "civilWord": "Souris",
-    "undercoverWord": "Rat",
+    "citizenWord": "Souris",
+    "impostorWord": "Rat",
     "version": 2
   },
   {
     "id": 81,
     "category": "Nourriture",
-    "civilWord": "Concombre",
-    "undercoverWord": "Courgette",
+    "citizenWord": "Concombre",
+    "impostorWord": "Courgette",
     "version": 2
   },
   {
     "id": 82,
     "category": "Nourriture",
-    "civilWord": "Fraise",
-    "undercoverWord": "Framboise",
+    "citizenWord": "Fraise",
+    "impostorWord": "Framboise",
     "version": 2
   },
   {
     "id": 83,
     "category": "Nourriture",
-    "civilWord": "Banane",
-    "undercoverWord": "Plantain",
+    "citizenWord": "Banane",
+    "impostorWord": "Plantain",
     "version": 2
   },
   {
     "id": 84,
     "category": "Nourriture",
-    "civilWord": "Noix de coco",
-    "undercoverWord": "Ananas",
+    "citizenWord": "Noix de coco",
+    "impostorWord": "Ananas",
     "version": 2
   },
   {
     "id": 85,
     "category": "Animaux",
-    "civilWord": "Dragon",
-    "undercoverWord": "Dinosaure",
+    "citizenWord": "Dragon",
+    "impostorWord": "Dinosaure",
     "version": 2
   },
   {
     "id": 86,
     "category": "Divertissement",
-    "civilWord": "Fantôme",
-    "undercoverWord": "Zombie",
+    "citizenWord": "Fantôme",
+    "impostorWord": "Zombie",
     "version": 2
   },
   {
     "id": 87,
     "category": "Objets",
-    "civilWord": "Chef",
-    "undercoverWord": "Plan de travail de cuisine",
+    "citizenWord": "Chef",
+    "impostorWord": "Plan de travail de cuisine",
     "version": 2
   },
   {
     "id": 88,
     "category": "Objets",
-    "civilWord": "Pelle",
-    "undercoverWord": "Hache",
+    "citizenWord": "Pelle",
+    "impostorWord": "Hache",
     "version": 2
   },
   {
     "id": 89,
     "category": "Lieux",
-    "civilWord": "Pyramide",
-    "undercoverWord": "Temple",
+    "citizenWord": "Pyramide",
+    "impostorWord": "Temple",
     "version": 2
   },
   {
     "id": 90,
     "category": "Nature",
-    "civilWord": "Volcan",
-    "undercoverWord": "Montagne",
+    "citizenWord": "Volcan",
+    "impostorWord": "Montagne",
     "version": 2
   },
   {
     "id": 91,
     "category": "Nature",
-    "civilWord": "Désert",
-    "undercoverWord": "Sable",
+    "citizenWord": "Désert",
+    "impostorWord": "Sable",
     "version": 2
   },
   {
     "id": 92,
     "category": "Nature",
-    "civilWord": "Nuage",
-    "undercoverWord": "Brouillard",
+    "citizenWord": "Nuage",
+    "impostorWord": "Brouillard",
     "version": 2
   },
   {
     "id": 93,
     "category": "Nature",
-    "civilWord": "Neige",
-    "undercoverWord": "Grêle",
+    "citizenWord": "Neige",
+    "impostorWord": "Grêle",
     "version": 2
   },
   {
     "id": 94,
     "category": "Métiers",
-    "civilWord": "Détective",
-    "undercoverWord": "Criminel",
+    "citizenWord": "Détective",
+    "impostorWord": "Criminel",
     "version": 2
   },
   {
     "id": 95,
     "category": "Nature",
-    "civilWord": "Jungle",
-    "undercoverWord": "Forêt",
+    "citizenWord": "Jungle",
+    "impostorWord": "Forêt",
     "version": 2
   },
   {
     "id": 96,
     "category": "Objets",
-    "civilWord": "Horloge",
-    "undercoverWord": "Montre",
+    "citizenWord": "Horloge",
+    "impostorWord": "Montre",
     "version": 2
   },
   {
     "id": 97,
     "category": "Nourriture",
-    "civilWord": "Pain",
-    "undercoverWord": "Toast",
+    "citizenWord": "Pain",
+    "impostorWord": "Toast",
     "version": 2
   },
   {
     "id": 98,
     "category": "Divertissement",
-    "civilWord": "Peinture",
-    "undercoverWord": "Croquis",
+    "citizenWord": "Peinture",
+    "impostorWord": "Croquis",
     "version": 2
   },
   {
     "id": 99,
     "category": "Objets",
-    "civilWord": "Parapluie",
-    "undercoverWord": "Ombrelle",
+    "citizenWord": "Parapluie",
+    "impostorWord": "Ombrelle",
     "version": 2
   },
   {
     "id": 100,
     "category": "Objets",
-    "civilWord": "Costume",
-    "undercoverWord": "Cravate",
+    "citizenWord": "Costume",
+    "impostorWord": "Cravate",
     "version": 2
   },
   {
     "id": 101,
     "category": "Objets",
-    "civilWord": "Chaussettes",
-    "undercoverWord": "Collants",
+    "citizenWord": "Chaussettes",
+    "impostorWord": "Collants",
     "version": 2
   },
   {
     "id": 102,
     "category": "Objets",
-    "civilWord": "Ceinture",
-    "undercoverWord": "Jean",
+    "citizenWord": "Ceinture",
+    "impostorWord": "Jean",
     "version": 2
   },
   {
     "id": 103,
     "category": "Objets",
-    "civilWord": "Couronne",
-    "undercoverWord": "Chapeau",
+    "citizenWord": "Couronne",
+    "impostorWord": "Chapeau",
     "version": 2
   },
   {
     "id": 104,
     "category": "Divertissement",
-    "civilWord": "Ballet",
-    "undercoverWord": "Hip-hop",
+    "citizenWord": "Ballet",
+    "impostorWord": "Hip-hop",
     "version": 2
   },
   {
     "id": 105,
     "category": "Animaux",
-    "civilWord": "Perroquet",
-    "undercoverWord": "Corbeau",
+    "citizenWord": "Perroquet",
+    "impostorWord": "Corbeau",
     "version": 2
   },
   {
     "id": 106,
     "category": "Animaux",
-    "civilWord": "Chauve-souris",
-    "undercoverWord": "Hibou",
+    "citizenWord": "Chauve-souris",
+    "impostorWord": "Hibou",
     "version": 2
   },
   {
     "id": 107,
     "category": "Objets",
-    "civilWord": "Bougie",
-    "undercoverWord": "Lanterne",
+    "citizenWord": "Bougie",
+    "impostorWord": "Lanterne",
     "version": 2
   },
   {
     "id": 108,
     "category": "Lieux",
-    "civilWord": "Bibliothèque",
-    "undercoverWord": "Université",
+    "citizenWord": "Bibliothèque",
+    "impostorWord": "Université",
     "version": 2
   },
   {
     "id": 109,
     "category": "Lieux",
-    "civilWord": "Musée",
-    "undercoverWord": "Galerie",
+    "citizenWord": "Musée",
+    "impostorWord": "Galerie",
     "version": 2
   },
   {
     "id": 110,
     "category": "Divertissement",
-    "civilWord": "Radio",
-    "undercoverWord": "Podcast",
+    "citizenWord": "Radio",
+    "impostorWord": "Podcast",
     "version": 2
   },
   {
     "id": 111,
     "category": "Divertissement",
-    "civilWord": "Actualités en ligne",
-    "undercoverWord": "Journal",
+    "citizenWord": "Actualités en ligne",
+    "impostorWord": "Journal",
     "version": 2
   },
   {
     "id": 112,
     "category": "Objets",
-    "civilWord": "Stylo",
-    "undercoverWord": "Feuille",
+    "citizenWord": "Stylo",
+    "impostorWord": "Feuille",
     "version": 2
   },
   {
     "id": 113,
     "category": "Sport",
-    "civilWord": "Tennis",
-    "undercoverWord": "Badminton",
+    "citizenWord": "Tennis",
+    "impostorWord": "Badminton",
     "version": 2
   },
   {
     "id": 114,
     "category": "Sport",
-    "civilWord": "Ski",
-    "undercoverWord": "Neige",
+    "citizenWord": "Ski",
+    "impostorWord": "Neige",
     "version": 2
   },
   {
     "id": 115,
     "category": "Sport",
-    "civilWord": "Natation",
-    "undercoverWord": "Plongée",
+    "citizenWord": "Natation",
+    "impostorWord": "Plongée",
     "version": 2
   },
   {
     "id": 116,
     "category": "Sport",
-    "civilWord": "Course",
-    "undercoverWord": "Jogging",
+    "citizenWord": "Course",
+    "impostorWord": "Jogging",
     "version": 2
   },
   {
     "id": 117,
     "category": "Objets",
-    "civilWord": "Ascenseur",
-    "undercoverWord": "Escalator",
+    "citizenWord": "Ascenseur",
+    "impostorWord": "Escalator",
     "version": 2
   },
   {
     "id": 118,
     "category": "Transports",
-    "civilWord": "Ferry",
-    "undercoverWord": "Croisière",
+    "citizenWord": "Ferry",
+    "impostorWord": "Croisière",
     "version": 2
   },
   {
     "id": 119,
     "category": "Technologie",
-    "civilWord": "Carte",
-    "undercoverWord": "GPS",
+    "citizenWord": "Carte",
+    "impostorWord": "GPS",
     "version": 2
   },
   {
     "id": 120,
     "category": "Transports",
-    "civilWord": "Voilier",
-    "undercoverWord": "Yacht",
+    "citizenWord": "Voilier",
+    "impostorWord": "Yacht",
     "version": 2
   },
   {
     "id": 121,
     "category": "Nature",
-    "civilWord": "Météore",
-    "undercoverWord": "Satellite",
+    "citizenWord": "Météore",
+    "impostorWord": "Satellite",
     "version": 2
   },
   {
     "id": 122,
     "category": "Nature",
-    "civilWord": "Planète",
-    "undercoverWord": "Étoile",
+    "citizenWord": "Planète",
+    "impostorWord": "Étoile",
     "version": 2
   },
   {
     "id": 123,
     "category": "Nature",
-    "civilWord": "Tremblement de terre",
-    "undercoverWord": "Tsunami",
+    "citizenWord": "Tremblement de terre",
+    "impostorWord": "Tsunami",
     "version": 2
   },
   {
     "id": 124,
     "category": "Animaux",
-    "civilWord": "Méduse",
-    "undercoverWord": "Poulpe",
+    "citizenWord": "Méduse",
+    "impostorWord": "Poulpe",
     "version": 2
   },
   {
     "id": 125,
     "category": "Animaux",
-    "civilWord": "Loup",
-    "undercoverWord": "Renard",
+    "citizenWord": "Loup",
+    "impostorWord": "Renard",
     "version": 2
   },
   {
     "id": 126,
     "category": "Divertissement",
-    "civilWord": "Elvis Presley",
-    "undercoverWord": "The Beatles",
+    "citizenWord": "Elvis Presley",
+    "impostorWord": "The Beatles",
     "version": 2
   },
   {
     "id": 127,
     "category": "Histoire",
-    "civilWord": "Leonard de Vinci",
-    "undercoverWord": "Michel-Ange",
+    "citizenWord": "Leonard de Vinci",
+    "impostorWord": "Michel-Ange",
     "version": 2
   },
   {
     "id": 128,
     "category": "Histoire",
-    "civilWord": "Napoléon",
-    "undercoverWord": "Jules César",
+    "citizenWord": "Napoléon",
+    "impostorWord": "Jules César",
     "version": 2
   },
   {
     "id": 129,
     "category": "Divertissement",
-    "civilWord": "Mario",
-    "undercoverWord": "Luigi",
+    "citizenWord": "Mario",
+    "impostorWord": "Luigi",
     "version": 2
   },
   {
     "id": 130,
     "category": "Divertissement",
-    "civilWord": "Sonic",
-    "undercoverWord": "Tails",
+    "citizenWord": "Sonic",
+    "impostorWord": "Tails",
     "version": 2
   },
   {
     "id": 131,
     "category": "Divertissement",
-    "civilWord": "Pac-Man",
-    "undercoverWord": "Tetris",
+    "citizenWord": "Pac-Man",
+    "impostorWord": "Tetris",
     "version": 2
   },
   {
     "id": 132,
     "category": "Divertissement",
-    "civilWord": "Fortnite",
-    "undercoverWord": "Minecraft",
+    "citizenWord": "Fortnite",
+    "impostorWord": "Minecraft",
     "version": 2
   },
   {
     "id": 133,
     "category": "Divertissement",
-    "civilWord": "Call of Duty",
-    "undercoverWord": "Battlefield",
+    "citizenWord": "Call of Duty",
+    "impostorWord": "Battlefield",
     "version": 2
   },
   {
     "id": 134,
     "category": "Divertissement",
-    "civilWord": "Game of Thrones",
-    "undercoverWord": "Le Seigneur des anneaux",
+    "citizenWord": "Game of Thrones",
+    "impostorWord": "Le Seigneur des anneaux",
     "version": 2
   },
   {
     "id": 135,
     "category": "Divertissement",
-    "civilWord": "Star Wars",
-    "undercoverWord": "Star Trek",
+    "citizenWord": "Star Wars",
+    "impostorWord": "Star Trek",
     "version": 2
   },
   {
     "id": 136,
     "category": "Divertissement",
-    "civilWord": "Harry Potter",
-    "undercoverWord": "Percy Jackson",
+    "citizenWord": "Harry Potter",
+    "impostorWord": "Percy Jackson",
     "version": 2
   },
   {
     "id": 137,
     "category": "Divertissement",
-    "civilWord": "Dracula",
-    "undercoverWord": "Frankenstein",
+    "citizenWord": "Dracula",
+    "impostorWord": "Frankenstein",
     "version": 2
   },
   {
     "id": 138,
     "category": "Divertissement",
-    "civilWord": "James Bond",
-    "undercoverWord": "Service secret",
+    "citizenWord": "James Bond",
+    "impostorWord": "Service secret",
     "version": 2
   },
   {
     "id": 139,
     "category": "Divertissement",
-    "civilWord": "Homer Simpson",
-    "undercoverWord": "Peter Griffin",
+    "citizenWord": "Homer Simpson",
+    "impostorWord": "Peter Griffin",
     "version": 2
   },
   {
     "id": 140,
     "category": "Divertissement",
-    "civilWord": "SpongeBob",
-    "undercoverWord": "Patrick",
+    "citizenWord": "SpongeBob",
+    "impostorWord": "Patrick",
     "version": 2
   },
   {
     "id": 141,
     "category": "Divertissement",
-    "civilWord": "Godzilla",
-    "undercoverWord": "King Kong",
+    "citizenWord": "Godzilla",
+    "impostorWord": "King Kong",
     "version": 2
   },
   {
     "id": 142,
     "category": "Divertissement",
-    "civilWord": "Lego",
-    "undercoverWord": "Playmobil",
+    "citizenWord": "Lego",
+    "impostorWord": "Playmobil",
     "version": 2
   },
   {
     "id": 143,
     "category": "Divertissement",
-    "civilWord": "UNO",
-    "undercoverWord": "Monopoly",
+    "citizenWord": "UNO",
+    "impostorWord": "Monopoly",
     "version": 2
   },
   {
     "id": 144,
     "category": "Divertissement",
-    "civilWord": "Catan",
-    "undercoverWord": "Risk",
+    "citizenWord": "Catan",
+    "impostorWord": "Risk",
     "version": 2
   },
   {
     "id": 145,
     "category": "Divertissement",
-    "civilWord": "Blackjack",
-    "undercoverWord": "Poker",
+    "citizenWord": "Blackjack",
+    "impostorWord": "Poker",
     "version": 2
   },
   {
     "id": 146,
     "category": "Divertissement",
-    "civilWord": "Bingo",
-    "undercoverWord": "Roulette",
+    "citizenWord": "Bingo",
+    "impostorWord": "Roulette",
     "version": 2
   },
   {
     "id": 147,
     "category": "Lieux",
-    "civilWord": "New York",
-    "undercoverWord": "Los Angeles",
+    "citizenWord": "New York",
+    "impostorWord": "Los Angeles",
     "version": 2
   },
   {
     "id": 148,
     "category": "Lieux",
-    "civilWord": "Paris",
-    "undercoverWord": "Londres",
+    "citizenWord": "Paris",
+    "impostorWord": "Londres",
     "version": 2
   },
   {
     "id": 149,
     "category": "Lieux",
-    "civilWord": "Rome",
-    "undercoverWord": "Athènes",
+    "citizenWord": "Rome",
+    "impostorWord": "Athènes",
     "version": 2
   },
   {
     "id": 150,
     "category": "Lieux",
-    "civilWord": "Sydney",
-    "undercoverWord": "Melbourne",
+    "citizenWord": "Sydney",
+    "impostorWord": "Melbourne",
     "version": 2
   },
   {
     "id": 151,
     "category": "Lieux",
-    "civilWord": "Rio de Janeiro",
-    "undercoverWord": "Buenos Aires",
+    "citizenWord": "Rio de Janeiro",
+    "impostorWord": "Buenos Aires",
     "version": 2
   },
   {
     "id": 152,
     "category": "Lieux",
-    "civilWord": "Mont Everest",
-    "undercoverWord": "Népal",
+    "citizenWord": "Mont Everest",
+    "impostorWord": "Népal",
     "version": 2
   },
   {
     "id": 153,
     "category": "Lieux",
-    "civilWord": "Amazon",
-    "undercoverWord": "Nil",
+    "citizenWord": "Amazon",
+    "impostorWord": "Nil",
     "version": 2
   },
   {
     "id": 154,
     "category": "Lieux",
-    "civilWord": "Grand Canyon",
-    "undercoverWord": "Chutes du Niagara",
+    "citizenWord": "Grand Canyon",
+    "impostorWord": "Chutes du Niagara",
     "version": 2
   },
   {
     "id": 155,
     "category": "Lieux",
-    "civilWord": "Taj Mahal",
-    "undercoverWord": "Grande Muraille de Chine",
+    "citizenWord": "Taj Mahal",
+    "impostorWord": "Grande Muraille de Chine",
     "version": 2
   },
   {
     "id": 156,
     "category": "Lieux",
-    "civilWord": "Tour Eiffel",
-    "undercoverWord": "Statue de la Liberté",
+    "citizenWord": "Tour Eiffel",
+    "impostorWord": "Statue de la Liberté",
     "version": 2
   },
   {
     "id": 157,
     "category": "Lieux",
-    "civilWord": "Big Ben",
-    "undercoverWord": "Tour de Pise",
+    "citizenWord": "Big Ben",
+    "impostorWord": "Tour de Pise",
     "version": 2
   },
   {
     "id": 158,
     "category": "Sport",
-    "civilWord": "Jeux olympiques",
-    "undercoverWord": "Coupe du monde",
+    "citizenWord": "Jeux olympiques",
+    "impostorWord": "Coupe du monde",
     "version": 2
   },
   {
     "id": 159,
     "category": "Sport",
-    "civilWord": "NBA",
-    "undercoverWord": "NFL",
+    "citizenWord": "NBA",
+    "impostorWord": "NFL",
     "version": 2
   },
   {
     "id": 160,
     "category": "Sport",
-    "civilWord": "Golf",
-    "undercoverWord": "Cricket",
+    "citizenWord": "Golf",
+    "impostorWord": "Cricket",
     "version": 2
   },
   {
     "id": 161,
     "category": "Sport",
-    "civilWord": "UFC",
-    "undercoverWord": "WWE",
+    "citizenWord": "UFC",
+    "impostorWord": "WWE",
     "version": 2
   },
   {
     "id": 162,
     "category": "Technologie",
-    "civilWord": "Twitch",
-    "undercoverWord": "Netflix",
+    "citizenWord": "Twitch",
+    "impostorWord": "Netflix",
     "version": 2
   },
   {
     "id": 163,
     "category": "Technologie",
-    "civilWord": "Twitter",
-    "undercoverWord": "Facebook",
+    "citizenWord": "Twitter",
+    "impostorWord": "Facebook",
     "version": 2
   },
   {
     "id": 164,
     "category": "Technologie",
-    "civilWord": "SpaceX",
-    "undercoverWord": "Tesla",
+    "citizenWord": "SpaceX",
+    "impostorWord": "Tesla",
     "version": 2
   },
   {
     "id": 165,
     "category": "Nourriture",
-    "civilWord": "Burger King",
-    "undercoverWord": "McDonald’s",
+    "citizenWord": "Burger King",
+    "impostorWord": "McDonald’s",
     "version": 2
   },
   {
     "id": 166,
     "category": "Technologie",
-    "civilWord": "Sony",
-    "undercoverWord": "Samsung",
+    "citizenWord": "Sony",
+    "impostorWord": "Samsung",
     "version": 2
   },
   {
     "id": 167,
     "category": "Transports",
-    "civilWord": "Mercedes",
-    "undercoverWord": "BMW",
+    "citizenWord": "Mercedes",
+    "impostorWord": "BMW",
     "version": 2
   },
   {
     "id": 168,
     "category": "Lieux",
-    "civilWord": "Harvard",
-    "undercoverWord": "MIT",
+    "citizenWord": "Harvard",
+    "impostorWord": "MIT",
     "version": 2
   },
   {
     "id": 169,
     "category": "Lieux",
-    "civilWord": "Oxford",
-    "undercoverWord": "Lycée",
+    "citizenWord": "Oxford",
+    "impostorWord": "Lycée",
     "version": 2
   },
   {
     "id": 170,
     "category": "Métiers",
-    "civilWord": "CIA",
-    "undercoverWord": "FBI",
+    "citizenWord": "CIA",
+    "impostorWord": "FBI",
     "version": 2
   },
   {
     "id": 171,
     "category": "Histoire",
-    "civilWord": "Hitler",
-    "undercoverWord": "Staline",
+    "citizenWord": "Hitler",
+    "impostorWord": "Staline",
     "version": 2
   },
   {
     "id": 172,
     "category": "Transports",
-    "civilWord": "Tesla",
-    "undercoverWord": "Porsche",
+    "citizenWord": "Tesla",
+    "impostorWord": "Porsche",
     "version": 2
   },
   {
     "id": 173,
     "category": "Technologie",
-    "civilWord": "iPhone",
-    "undercoverWord": "Samsung",
+    "citizenWord": "iPhone",
+    "impostorWord": "Samsung",
     "version": 2
   },
   {
     "id": 174,
     "category": "Divertissement",
-    "civilWord": "PlayStation",
-    "undercoverWord": "Xbox",
+    "citizenWord": "PlayStation",
+    "impostorWord": "Xbox",
     "version": 2
   },
   {
     "id": 175,
     "category": "Technologie",
-    "civilWord": "Windows",
-    "undercoverWord": "MacOS",
+    "citizenWord": "Windows",
+    "impostorWord": "MacOS",
     "version": 2
   },
   {
     "id": 176,
     "category": "Technologie",
-    "civilWord": "YouTube",
-    "undercoverWord": "TikTok",
+    "citizenWord": "YouTube",
+    "impostorWord": "TikTok",
     "version": 2
   },
   {
     "id": 177,
     "category": "Technologie",
-    "civilWord": "Twitch",
-    "undercoverWord": "Kick",
+    "citizenWord": "Twitch",
+    "impostorWord": "Kick",
     "version": 2
   },
   {
     "id": 178,
     "category": "Technologie",
-    "civilWord": "Spotify",
-    "undercoverWord": "Apple Music",
+    "citizenWord": "Spotify",
+    "impostorWord": "Apple Music",
     "version": 2
   },
   {
     "id": 179,
     "category": "Technologie",
-    "civilWord": "Reddit",
-    "undercoverWord": "Discord",
+    "citizenWord": "Reddit",
+    "impostorWord": "Discord",
     "version": 2
   },
   {
     "id": 180,
     "category": "Technologie",
-    "civilWord": "Instagram",
-    "undercoverWord": "Snapchat",
+    "citizenWord": "Instagram",
+    "impostorWord": "Snapchat",
     "version": 2
   },
   {
     "id": 181,
     "category": "Technologie",
-    "civilWord": "ChatGPT",
-    "undercoverWord": "Gemini",
+    "citizenWord": "ChatGPT",
+    "impostorWord": "Gemini",
     "version": 2
   },
   {
     "id": 182,
     "category": "Objets",
-    "civilWord": "Horloge",
-    "undercoverWord": "Cadran solaire",
+    "citizenWord": "Horloge",
+    "impostorWord": "Cadran solaire",
     "version": 2
   },
   {
     "id": 183,
     "category": "Technologie",
-    "civilWord": "Ordinateur portable",
-    "undercoverWord": "Ordinateur de bureau",
+    "citizenWord": "Ordinateur portable",
+    "impostorWord": "Ordinateur de bureau",
     "version": 2
   },
   {
     "id": 184,
     "category": "Animaux",
-    "civilWord": "Requin",
-    "undercoverWord": "Dauphin",
+    "citizenWord": "Requin",
+    "impostorWord": "Dauphin",
     "version": 2
   },
   {
     "id": 185,
     "category": "Animaux",
-    "civilWord": "Pingouin",
-    "undercoverWord": "Mouette",
+    "citizenWord": "Pingouin",
+    "impostorWord": "Mouette",
     "version": 2
   },
   {
     "id": 186,
     "category": "Nature",
-    "civilWord": "Lune",
-    "undercoverWord": "Planète",
+    "citizenWord": "Lune",
+    "impostorWord": "Planète",
     "version": 2
   },
   {
     "id": 187,
     "category": "Nature",
-    "civilWord": "Comète",
-    "undercoverWord": "Astéroïde",
+    "citizenWord": "Comète",
+    "impostorWord": "Astéroïde",
     "version": 2
   },
   {
     "id": 188,
     "category": "Transports",
-    "civilWord": "Pont",
-    "undercoverWord": "Tunnel",
+    "citizenWord": "Pont",
+    "impostorWord": "Tunnel",
     "version": 2
   },
   {
     "id": 189,
     "category": "Transports",
-    "civilWord": "Bus",
-    "undercoverWord": "Tramway",
+    "citizenWord": "Bus",
+    "impostorWord": "Tramway",
     "version": 2
   },
   {
     "id": 190,
     "category": "Transports",
-    "civilWord": "Train",
-    "undercoverWord": "Monorail",
+    "citizenWord": "Train",
+    "impostorWord": "Monorail",
     "version": 2
   },
   {
     "id": 191,
     "category": "Objets",
-    "civilWord": "Cahier",
-    "undercoverWord": "Journal intime",
+    "citizenWord": "Cahier",
+    "impostorWord": "Journal intime",
     "version": 2
   },
   {
     "id": 192,
     "category": "Objets",
-    "civilWord": "Cuillère",
-    "undercoverWord": "Fourchette",
+    "citizenWord": "Cuillère",
+    "impostorWord": "Fourchette",
     "version": 2
   },
   {
     "id": 193,
     "category": "Objets",
-    "civilWord": "Assiette",
-    "undercoverWord": "Bol",
+    "citizenWord": "Assiette",
+    "impostorWord": "Bol",
     "version": 2
   },
   {
     "id": 194,
     "category": "Nature",
-    "civilWord": "Fontaine",
-    "undercoverWord": "Cascade",
+    "citizenWord": "Fontaine",
+    "impostorWord": "Cascade",
     "version": 2
   },
   {
     "id": 195,
     "category": "Nature",
-    "civilWord": "Lac",
-    "undercoverWord": "Étang",
+    "citizenWord": "Lac",
+    "impostorWord": "Étang",
     "version": 2
   },
   {
     "id": 196,
     "category": "Animaux",
-    "civilWord": "Girafe",
-    "undercoverWord": "Zèbre",
+    "citizenWord": "Girafe",
+    "impostorWord": "Zèbre",
     "version": 2
   },
   {
     "id": 197,
     "category": "Animaux",
-    "civilWord": "Éléphant",
-    "undercoverWord": "Rhinocéros",
+    "citizenWord": "Éléphant",
+    "impostorWord": "Rhinocéros",
     "version": 2
   },
   {
     "id": 198,
     "category": "Animaux",
-    "civilWord": "Alligator",
-    "undercoverWord": "Crocodile",
+    "citizenWord": "Alligator",
+    "impostorWord": "Crocodile",
     "version": 2
   },
   {
     "id": 199,
     "category": "Animaux",
-    "civilWord": "Huître",
-    "undercoverWord": "Palourde",
+    "citizenWord": "Huître",
+    "impostorWord": "Palourde",
     "version": 2
   },
   {
     "id": 200,
     "category": "Objets",
-    "civilWord": "Or",
-    "undercoverWord": "Argent",
+    "citizenWord": "Or",
+    "impostorWord": "Argent",
     "version": 2
   },
   {
     "id": 201,
     "category": "Objets",
-    "civilWord": "Platine",
-    "undercoverWord": "Or",
+    "citizenWord": "Platine",
+    "impostorWord": "Or",
     "version": 2
   },
   {
     "id": 202,
     "category": "Objets",
-    "civilWord": "Jean",
-    "undercoverWord": "Velours côtelé",
+    "citizenWord": "Jean",
+    "impostorWord": "Velours côtelé",
     "version": 2
   },
   {
     "id": 203,
     "category": "Objets",
-    "civilWord": "Veste",
-    "undercoverWord": "Manteau",
+    "citizenWord": "Veste",
+    "impostorWord": "Manteau",
     "version": 2
   },
   {
     "id": 204,
     "category": "Objets",
-    "civilWord": "Écharpe",
-    "undercoverWord": "Cravate",
+    "citizenWord": "Écharpe",
+    "impostorWord": "Cravate",
     "version": 2
   },
   {
     "id": 205,
     "category": "Objets",
-    "civilWord": "Bottes",
-    "undercoverWord": "Baskets",
+    "citizenWord": "Bottes",
+    "impostorWord": "Baskets",
     "version": 2
   },
   {
     "id": 206,
     "category": "Objets",
-    "civilWord": "Casque",
-    "undercoverWord": "Chapeau",
+    "citizenWord": "Casque",
+    "impostorWord": "Chapeau",
     "version": 2
   },
   {
     "id": 207,
     "category": "Objets",
-    "civilWord": "Collier",
-    "undercoverWord": "Bracelet",
+    "citizenWord": "Collier",
+    "impostorWord": "Bracelet",
     "version": 2
   },
   {
     "id": 208,
     "category": "Objets",
-    "civilWord": "Bague",
-    "undercoverWord": "Boucle d'oreille",
+    "citizenWord": "Bague",
+    "impostorWord": "Boucle d'oreille",
     "version": 2
   },
   {
     "id": 209,
     "category": "Technologie",
-    "civilWord": "Microphone",
-    "undercoverWord": "Haut-parleur",
+    "citizenWord": "Microphone",
+    "impostorWord": "Haut-parleur",
     "version": 2
   },
   {
     "id": 210,
     "category": "Technologie",
-    "civilWord": "Casque audio",
-    "undercoverWord": "Écouteurs",
+    "citizenWord": "Casque audio",
+    "impostorWord": "Écouteurs",
     "version": 2
   },
   {
     "id": 211,
     "category": "Technologie",
-    "civilWord": "Télévision",
-    "undercoverWord": "Radio",
+    "citizenWord": "Télévision",
+    "impostorWord": "Radio",
     "version": 2
   },
   {
     "id": 212,
     "category": "Technologie",
-    "civilWord": "Projecteur",
-    "undercoverWord": "Écran",
+    "citizenWord": "Projecteur",
+    "impostorWord": "Écran",
     "version": 2
   },
   {
     "id": 213,
     "category": "Objets",
-    "civilWord": "Calculatrice",
-    "undercoverWord": "Machine à écrire",
+    "citizenWord": "Calculatrice",
+    "impostorWord": "Machine à écrire",
     "version": 2
   },
   {
     "id": 214,
     "category": "Objets",
-    "civilWord": "Lampe de poche",
-    "undercoverWord": "Lanterne",
+    "citizenWord": "Lampe de poche",
+    "impostorWord": "Lanterne",
     "version": 2
   },
   {
     "id": 215,
     "category": "Objets",
-    "civilWord": "Tente",
-    "undercoverWord": "Cabane",
+    "citizenWord": "Tente",
+    "impostorWord": "Cabane",
     "version": 2
   },
   {
     "id": 216,
     "category": "Objets",
-    "civilWord": "Boussole",
-    "undercoverWord": "Carte",
+    "citizenWord": "Boussole",
+    "impostorWord": "Carte",
     "version": 2
   },
   {
     "id": 217,
     "category": "Objets",
-    "civilWord": "Carte d'embarquement",
-    "undercoverWord": "Carte d'identité",
+    "citizenWord": "Carte d'embarquement",
+    "impostorWord": "Carte d'identité",
     "version": 2
   },
   {
     "id": 218,
     "category": "Objets",
-    "civilWord": "Billet",
-    "undercoverWord": "Facture",
+    "citizenWord": "Billet",
+    "impostorWord": "Facture",
     "version": 2
   },
   {
     "id": 219,
     "category": "Objets",
-    "civilWord": "Passeport",
-    "undercoverWord": "Billet",
+    "citizenWord": "Passeport",
+    "impostorWord": "Billet",
     "version": 2
   },
   {
     "id": 220,
     "category": "Transports",
-    "civilWord": "Métro",
-    "undercoverWord": "Taxi",
+    "citizenWord": "Métro",
+    "impostorWord": "Taxi",
     "version": 2
   },
   {
     "id": 221,
     "category": "Transports",
-    "civilWord": "Ciel",
-    "undercoverWord": "Jet",
+    "citizenWord": "Ciel",
+    "impostorWord": "Jet",
     "version": 2
   },
   {
     "id": 222,
     "category": "Transports",
-    "civilWord": "Moto",
-    "undercoverWord": "Scooter",
+    "citizenWord": "Moto",
+    "impostorWord": "Scooter",
     "version": 2
   },
   {
     "id": 223,
     "category": "Sport",
-    "civilWord": "Planche de surf",
-    "undercoverWord": "Skateboard",
+    "citizenWord": "Planche de surf",
+    "impostorWord": "Skateboard",
     "version": 2
   },
   {
     "id": 224,
     "category": "Sport",
-    "civilWord": "Base-ball",
-    "undercoverWord": "Football",
+    "citizenWord": "Base-ball",
+    "impostorWord": "Football",
     "version": 2
   },
   {
     "id": 225,
     "category": "Sport",
-    "civilWord": "Volley-ball",
-    "undercoverWord": "Basket-ball",
+    "citizenWord": "Volley-ball",
+    "impostorWord": "Basket-ball",
     "version": 2
   },
   {
     "id": 226,
     "category": "Sport",
-    "civilWord": "Tennis de table",
-    "undercoverWord": "Badminton",
+    "citizenWord": "Tennis de table",
+    "impostorWord": "Badminton",
     "version": 2
   },
   {
     "id": 227,
     "category": "Lieux",
-    "civilWord": "Boulangerie",
-    "undercoverWord": "Boucherie",
+    "citizenWord": "Boulangerie",
+    "impostorWord": "Boucherie",
     "version": 2
   },
   {
     "id": 228,
     "category": "Divertissement",
-    "civilWord": "Puzzle",
-    "undercoverWord": "Mots croisés",
+    "citizenWord": "Puzzle",
+    "impostorWord": "Mots croisés",
     "version": 2
   },
   {
     "id": 229,
     "category": "Divertissement",
-    "civilWord": "Cartes",
-    "undercoverWord": "Dés",
+    "citizenWord": "Cartes",
+    "impostorWord": "Dés",
     "version": 2
   },
   {
     "id": 230,
     "category": "Sport",
-    "civilWord": "Bowling",
-    "undercoverWord": "Golf",
+    "citizenWord": "Bowling",
+    "impostorWord": "Golf",
     "version": 2
   },
   {
     "id": 231,
     "category": "Sport",
-    "civilWord": "Marathon",
-    "undercoverWord": "Sprint",
+    "citizenWord": "Marathon",
+    "impostorWord": "Sprint",
     "version": 2
   },
   {
     "id": 232,
     "category": "Sport",
-    "civilWord": "Escrime",
-    "undercoverWord": "Tir à l'arc",
+    "citizenWord": "Escrime",
+    "impostorWord": "Tir à l'arc",
     "version": 2
   },
   {
     "id": 233,
     "category": "Sport",
-    "civilWord": "Boxe",
-    "undercoverWord": "Karate",
+    "citizenWord": "Boxe",
+    "impostorWord": "Karate",
     "version": 2
   },
   {
     "id": 234,
     "category": "Sport",
-    "civilWord": "Hockey",
-    "undercoverWord": "Football",
+    "citizenWord": "Hockey",
+    "impostorWord": "Football",
     "version": 2
   },
   {
     "id": 235,
     "category": "Divertissement",
-    "civilWord": "Concert",
-    "undercoverWord": "Festival",
+    "citizenWord": "Concert",
+    "impostorWord": "Festival",
     "version": 2
   },
   {
     "id": 236,
     "category": "Divertissement",
-    "civilWord": "Roman",
-    "undercoverWord": "Poème",
+    "citizenWord": "Roman",
+    "impostorWord": "Poème",
     "version": 2
   },
   {
     "id": 237,
     "category": "Divertissement",
-    "civilWord": "Dictionnaire",
-    "undercoverWord": "Encyclopédie",
+    "citizenWord": "Dictionnaire",
+    "impostorWord": "Encyclopédie",
     "version": 2
   },
   {
     "id": 238,
     "category": "Métiers",
-    "civilWord": "Pharmacien",
-    "undercoverWord": "Docteur",
+    "citizenWord": "Pharmacien",
+    "impostorWord": "Docteur",
     "version": 2
   },
   {
     "id": 239,
     "category": "Métiers",
-    "civilWord": "Ingénieur",
-    "undercoverWord": "Architecte",
+    "citizenWord": "Ingénieur",
+    "impostorWord": "Architecte",
     "version": 2
   },
   {
     "id": 240,
     "category": "Métiers",
-    "civilWord": "Pompier",
-    "undercoverWord": "Policier",
+    "citizenWord": "Pompier",
+    "impostorWord": "Policier",
     "version": 2
   },
   {
     "id": 241,
     "category": "Lieux",
-    "civilWord": "Allemagne",
-    "undercoverWord": "France",
+    "citizenWord": "Allemagne",
+    "impostorWord": "France",
     "version": 2
   },
   {
     "id": 242,
     "category": "Métiers",
-    "civilWord": "Pilote",
-    "undercoverWord": "Astronaute",
+    "citizenWord": "Pilote",
+    "impostorWord": "Astronaute",
     "version": 2
   },
   {
     "id": 243,
     "category": "Métiers",
-    "civilWord": "Juge",
-    "undercoverWord": "Punition",
+    "citizenWord": "Juge",
+    "impostorWord": "Punition",
     "version": 2
   },
   {
     "id": 244,
     "category": "Métiers",
-    "civilWord": "Boulanger",
-    "undercoverWord": "Chef",
+    "citizenWord": "Boulanger",
+    "impostorWord": "Chef",
     "version": 2
   },
   {
     "id": 245,
     "category": "Métiers",
-    "civilWord": "Fermier",
-    "undercoverWord": "Pêcheur",
+    "citizenWord": "Fermier",
+    "impostorWord": "Pêcheur",
     "version": 2
   },
   {
     "id": 246,
     "category": "Métiers",
-    "civilWord": "Forgeron",
-    "undercoverWord": "Charpentier",
+    "citizenWord": "Forgeron",
+    "impostorWord": "Charpentier",
     "version": 2
   },
   {
     "id": 247,
     "category": "Histoire",
-    "civilWord": "Paradis",
-    "undercoverWord": "Enfer",
+    "citizenWord": "Paradis",
+    "impostorWord": "Enfer",
     "version": 2
   },
   {
     "id": 248,
     "category": "Nature",
-    "civilWord": "Ciel",
-    "undercoverWord": "Nuages",
+    "citizenWord": "Ciel",
+    "impostorWord": "Nuages",
     "version": 2
   },
   {
     "id": 249,
     "category": "Lieux",
-    "civilWord": "Japon",
-    "undercoverWord": "Chine",
+    "citizenWord": "Japon",
+    "impostorWord": "Chine",
     "version": 2
   },
   {
     "id": 250,
     "category": "Nourriture",
-    "civilWord": "Allemagne",
-    "undercoverWord": "Bière",
+    "citizenWord": "Allemagne",
+    "impostorWord": "Bière",
     "version": 2
   },
   {
     "id": 251,
     "category": "Divertissement",
-    "civilWord": "Film",
-    "undercoverWord": "Acteur",
+    "citizenWord": "Film",
+    "impostorWord": "Acteur",
     "version": 2
   },
   {
     "id": 252,
     "category": "Technologie",
-    "civilWord": "Écran",
-    "undercoverWord": "TV",
+    "citizenWord": "Écran",
+    "impostorWord": "TV",
     "version": 2
   },
   {
     "id": 253,
     "category": "Lieux",
-    "civilWord": "France",
-    "undercoverWord": "Tour Eiffel",
+    "citizenWord": "France",
+    "impostorWord": "Tour Eiffel",
     "version": 2
   },
   {
     "id": 254,
     "category": "Divertissement",
-    "civilWord": "Thor",
-    "undercoverWord": "Foudre",
+    "citizenWord": "Thor",
+    "impostorWord": "Foudre",
     "version": 2
   },
   {
     "id": 255,
     "category": "Divertissement",
-    "civilWord": "Obi Wan",
-    "undercoverWord": "Force",
+    "citizenWord": "Obi Wan",
+    "impostorWord": "Force",
     "version": 2
   },
   {
     "id": 256,
     "category": "Technologie",
-    "civilWord": "OVNI",
-    "undercoverWord": "Drones",
+    "citizenWord": "OVNI",
+    "impostorWord": "Drones",
     "version": 2
   },
   {
     "id": 257,
     "category": "Histoire",
-    "civilWord": "Dieu",
-    "undercoverWord": "Paradis",
+    "citizenWord": "Dieu",
+    "impostorWord": "Paradis",
     "version": 2
   },
   {
     "id": 258,
     "category": "Nourriture",
-    "civilWord": "Tortilla",
-    "undercoverWord": "Taco",
+    "citizenWord": "Tortilla",
+    "impostorWord": "Taco",
     "version": 2
   },
   {
     "id": 259,
     "category": "Nourriture",
-    "civilWord": "Baguette",
-    "undercoverWord": "Ciabatta",
+    "citizenWord": "Baguette",
+    "impostorWord": "Ciabatta",
     "version": 2
   },
   {
     "id": 260,
     "category": "Nourriture",
-    "civilWord": "Hot Dog",
-    "undercoverWord": "Bratwurst",
+    "citizenWord": "Hot Dog",
+    "impostorWord": "Bratwurst",
     "version": 2
   },
   {
     "id": 261,
     "category": "Nourriture",
-    "civilWord": "Boisson énergisante",
-    "undercoverWord": "Soda",
+    "citizenWord": "Boisson énergisante",
+    "impostorWord": "Soda",
     "version": 2
   },
   {
     "id": 262,
     "category": "Nourriture",
-    "civilWord": "Lait de coco",
-    "undercoverWord": "Lait de soja",
+    "citizenWord": "Lait de coco",
+    "impostorWord": "Lait de soja",
     "version": 2
   },
   {
     "id": 263,
     "category": "Divertissement",
-    "civilWord": "Picasso",
-    "undercoverWord": "Van Gogh",
+    "citizenWord": "Picasso",
+    "impostorWord": "Van Gogh",
     "version": 2
   },
   {
     "id": 264,
     "category": "Divertissement",
-    "civilWord": "Mozart",
-    "undercoverWord": "Beethoven",
+    "citizenWord": "Mozart",
+    "impostorWord": "Beethoven",
     "version": 2
   },
   {
     "id": 265,
     "category": "Sport",
-    "civilWord": "Messi",
-    "undercoverWord": "Ronaldo",
+    "citizenWord": "Messi",
+    "impostorWord": "Ronaldo",
     "version": 2
   },
   {
     "id": 266,
     "category": "Sport",
-    "civilWord": "Bayern Munich",
-    "undercoverWord": "Real Madrid",
+    "citizenWord": "Bayern Munich",
+    "impostorWord": "Real Madrid",
     "version": 2
   },
   {
     "id": 267,
     "category": "Transports",
-    "civilWord": "Ferrari",
-    "undercoverWord": "Lamborghini",
+    "citizenWord": "Ferrari",
+    "impostorWord": "Lamborghini",
     "version": 2
   },
   {
     "id": 268,
     "category": "Nourriture",
-    "civilWord": "Coca-Cola",
-    "undercoverWord": "Pepsi",
+    "citizenWord": "Coca-Cola",
+    "impostorWord": "Pepsi",
     "version": 2
   },
   {
     "id": 269,
     "category": "Technologie",
-    "civilWord": "Souris",
-    "undercoverWord": "Clavier",
+    "citizenWord": "Souris",
+    "impostorWord": "Clavier",
     "version": 2
   },
   {
     "id": 270,
     "category": "Technologie",
-    "civilWord": "TV",
-    "undercoverWord": "Ordinateur portable",
+    "citizenWord": "TV",
+    "impostorWord": "Ordinateur portable",
     "version": 2
   },
   {
     "id": 271,
     "category": "Objets",
-    "civilWord": "Armoire",
-    "undercoverWord": "Vitrine",
+    "citizenWord": "Armoire",
+    "impostorWord": "Vitrine",
     "version": 2
   },
   {
     "id": 272,
     "category": "Nature",
-    "civilWord": "Bouleau",
-    "undercoverWord": "Arbuste",
+    "citizenWord": "Bouleau",
+    "impostorWord": "Arbuste",
     "version": 2
   },
   {
     "id": 273,
     "category": "Objets",
-    "civilWord": "Radiateur",
-    "undercoverWord": "Sèche-cheveux",
+    "citizenWord": "Radiateur",
+    "impostorWord": "Sèche-cheveux",
     "version": 2
   },
   {
     "id": 274,
     "category": "Objets",
-    "civilWord": "Lampe",
-    "undercoverWord": "Bougie",
+    "citizenWord": "Lampe",
+    "impostorWord": "Bougie",
     "version": 2
   },
   {
     "id": 275,
     "category": "Objets",
-    "civilWord": "Oreiller",
-    "undercoverWord": "Couverture",
+    "citizenWord": "Oreiller",
+    "impostorWord": "Couverture",
     "version": 2
   },
   {
     "id": 276,
     "category": "Technologie",
-    "civilWord": "Microphone",
-    "undercoverWord": "Caméra",
+    "citizenWord": "Microphone",
+    "impostorWord": "Caméra",
     "version": 2
   },
   {
     "id": 277,
     "category": "Objets",
-    "civilWord": "Four",
-    "undercoverWord": "Micro-ondes",
+    "citizenWord": "Four",
+    "impostorWord": "Micro-ondes",
     "version": 2
   },
   {
     "id": 278,
     "category": "Objets",
-    "civilWord": "Poêle",
-    "undercoverWord": "Casserole",
+    "citizenWord": "Poêle",
+    "impostorWord": "Casserole",
     "version": 2
   },
   {
     "id": 279,
     "category": "Technologie",
-    "civilWord": "Tablette",
-    "undercoverWord": "Smartphone",
+    "citizenWord": "Tablette",
+    "impostorWord": "Smartphone",
     "version": 2
   },
   {
     "id": 280,
     "category": "Objets",
-    "civilWord": "Escalier",
-    "undercoverWord": "Ascenseur",
+    "citizenWord": "Escalier",
+    "impostorWord": "Ascenseur",
     "version": 2
   },
   {
     "id": 281,
     "category": "Divertissement",
-    "civilWord": "Techno",
-    "undercoverWord": "Rap",
+    "citizenWord": "Techno",
+    "impostorWord": "Rap",
     "version": 2
   },
   {
     "id": 282,
     "category": "Divertissement",
-    "civilWord": "Rock",
-    "undercoverWord": "Pop",
+    "citizenWord": "Rock",
+    "impostorWord": "Pop",
     "version": 2
   },
   {
     "id": 283,
     "category": "Objets",
-    "civilWord": "Fenêtre",
-    "undercoverWord": "Porte",
+    "citizenWord": "Fenêtre",
+    "impostorWord": "Porte",
     "version": 2
   },
   {
     "id": 284,
     "category": "Objets",
-    "civilWord": "Four",
-    "undercoverWord": "Chauffage",
+    "citizenWord": "Four",
+    "impostorWord": "Chauffage",
     "version": 2
   },
   {
     "id": 285,
     "category": "Objets",
-    "civilWord": "Montre-bracelet",
-    "undercoverWord": "Réveil",
+    "citizenWord": "Montre-bracelet",
+    "impostorWord": "Réveil",
     "version": 2
   },
   {
     "id": 286,
     "category": "Objets",
-    "civilWord": "Lit",
-    "undercoverWord": "Canapé",
+    "citizenWord": "Lit",
+    "impostorWord": "Canapé",
     "version": 2
   },
   {
     "id": 287,
     "category": "Divertissement",
-    "civilWord": "Livre",
-    "undercoverWord": "Journal",
+    "citizenWord": "Livre",
+    "impostorWord": "Journal",
     "version": 2
   },
   {
     "id": 288,
     "category": "Nature",
-    "civilWord": "Forêt",
-    "undercoverWord": "Parc",
+    "citizenWord": "Forêt",
+    "impostorWord": "Parc",
     "version": 2
   },
   {
     "id": 289,
     "category": "Divertissement",
-    "civilWord": "Cinéma",
-    "undercoverWord": "Bowling",
+    "citizenWord": "Cinéma",
+    "impostorWord": "Bowling",
     "version": 2
   },
   {
     "id": 290,
     "category": "Divertissement",
-    "civilWord": "Netflix",
-    "undercoverWord": "Cinéma",
+    "citizenWord": "Netflix",
+    "impostorWord": "Cinéma",
     "version": 2
   },
   {
     "id": 291,
     "category": "Lieux",
-    "civilWord": "Piscine",
-    "undercoverWord": "Plage",
+    "citizenWord": "Piscine",
+    "impostorWord": "Plage",
     "version": 2
   },
   {
     "id": 292,
     "category": "Objets",
-    "civilWord": "Verre",
-    "undercoverWord": "Tasse",
+    "citizenWord": "Verre",
+    "impostorWord": "Tasse",
     "version": 2
   },
   {
     "id": 293,
     "category": "Divertissement",
-    "civilWord": "Travail",
-    "undercoverWord": "Loisir",
+    "citizenWord": "Travail",
+    "impostorWord": "Loisir",
     "version": 2
   },
   {
     "id": 294,
     "category": "Divertissement",
-    "civilWord": "Jésus",
-    "undercoverWord": "Père Noël",
+    "citizenWord": "Jésus",
+    "impostorWord": "Père Noël",
     "version": 2
   },
   {
     "id": 295,
     "category": "Objets",
-    "civilWord": "Soutien-gorge",
-    "undercoverWord": "Bikini",
+    "citizenWord": "Soutien-gorge",
+    "impostorWord": "Bikini",
     "version": 2
   }
 ]

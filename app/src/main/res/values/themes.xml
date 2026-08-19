@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <!-- Thème de lancement : fond anthracite, sans barre d'action (gérée par Compose). -->
-    <style name="Theme.OpenCover" parent="android:Theme.Material.NoActionBar">
+    <style name="Theme.LeMytho" parent="android:Theme.Material.NoActionBar">
         <item name="android:windowBackground">@color/anthracite</item>
         <item name="android:statusBarColor">@color/anthracite</item>
         <item name="android:navigationBarColor">@color/anthracite</item>

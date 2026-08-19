@@ -1,4 +1,4 @@
-# LOCAL_SETUP — Installer et lancer OpenCover sur ta machine
+# LOCAL_SETUP — Installer et lancer Le Mytho sur ta machine
 
 Ce guide t'amène d'une machine "vierge" (aucun outil Android installé) jusqu'au premier build
 réussi de l'application. Suis les étapes dans l'ordre.
@@ -42,7 +42,7 @@ winget install --id Google.AndroidStudio -e
 3. Lance-le et laisse les options par défaut.
 
 À la fin de l'installation, lance Android Studio. **Ne crée pas de nouveau projet** : on va
-ouvrir le projet OpenCover existant à l'étape 3.
+ouvrir le projet Le Mytho existant à l'étape 3.
 
 ---
 
@@ -68,7 +68,7 @@ le SDK par défaut, puis vérifie les composants :
 
 ## 3. Ouvrir le projet et synchroniser Gradle
 
-1. Dans Android Studio : **File > Open**, puis sélectionne le dossier `opencover`
+1. Dans Android Studio : **File > Open**, puis sélectionne le dossier `lemytho`
    (celui qui contient `settings.gradle.kts`).
 2. Android Studio détecte `gradle/wrapper/gradle-wrapper.properties` et **télécharge Gradle 8.9**
    automatiquement. Il génère aussi les fichiers du wrapper (`gradlew`, `gradlew.bat`,
@@ -99,7 +99,7 @@ minutes. C'est normal.
 
 ## 5. Compiler l'APK en ligne de commande
 
-Ouvre un terminal **dans le dossier `opencover`**, puis tape (Windows) :
+Ouvre un terminal **dans le dossier `lemytho`**, puis tape (Windows) :
 
 ```powershell
 .\gradlew.bat assembleDebug
@@ -163,13 +163,13 @@ Tu peux aussi la modifier à la volée dans l'écran « Multijoueur » de l'app.
 
 ```powershell
 # À la racine du projet, avec Docker installé
-$env:OPENCOVER_DOMAIN = "opencover.example.com"
+$env:LEMYTHO_DOMAIN = "lemytho.example.com"
 docker compose up -d --build
 ```
 
 Le domaine doit pointer vers l'IP du VPS (enregistrement DNS `A`). Caddy obtient le certificat
 Let's Encrypt tout seul. L'app doit alors être configurée avec l'URL
-`https://opencover.example.com`.
+`https://lemytho.example.com`.
 
 ### 6.5. Tester le multijoueur
 
@@ -187,14 +187,14 @@ Le test multi-appareils nécessite deux appareils (ou un émulateur + un télép
 Les commandes ci-dessous initialisent le dépôt et poussent le code vers GitHub.
 
 > Remplace `TON_UTILISATEUR` par ton nom d'utilisateur GitHub. Crée d'abord un dépôt **vide**
-> nommé `opencover` sur <https://github.com/new> (sans README, sans .gitignore).
+> nommé `lemytho` sur <https://github.com/new> (sans README, sans .gitignore).
 
 ```powershell
 git init
 git add .
-git commit -m "Initialisation du projet OpenCover (structure Gradle + Compose)"
+git commit -m "Initialisation du projet Le Mytho (structure Gradle + Compose)"
 git branch -M main
-git remote add origin https://github.com/TON_UTILISATEUR/opencover.git
+git remote add origin https://github.com/TON_UTILISATEUR/lemytho.git
 git push -u origin main
 ```
 

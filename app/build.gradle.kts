@@ -16,14 +16,14 @@ if (keystorePropertiesFile.exists()) {
 }
 
 // URL du serveur multijoueur. Surchargeable au build :
-//   ./gradlew assembleDebug -Popencover.serverUrl=http://192.168.1.10:3000
-val serverUrl = (project.findProperty("opencover.serverUrl") as String?) ?: "https://opencover.duckdns.org"
+//   ./gradlew assembleDebug -Plemytho.serverUrl=http://192.168.1.10:3000
+val serverUrl = (project.findProperty("lemytho.serverUrl") as String?) ?: "https://lemytho.duckdns.org"
 
 // Version de l'application, réutilisée pour le nom de l'APK généré.
 val appVersion = "0.1.0"
 
 android {
-    namespace = "com.opencover.app"
+    namespace = "com.lemytho.app"
     compileSdk = 35
 
     signingConfigs {
@@ -38,7 +38,7 @@ android {
     }
 
     defaultConfig {
-        applicationId = "com.opencover.app"
+        applicationId = "com.lemytho.app"
         minSdk = 24
         targetSdk = 35
         versionCode = 1
@@ -70,13 +70,13 @@ android {
     }
 }
 
-// Nom de l'APK généré : OpenCover-<version>-<debug|release>.apk
+// Nom de l'APK généré : LeMytho-<version>-<debug|release>.apk
 androidComponents {
     onVariants(selector().all()) { variant ->
         variant.outputs.forEach { output ->
             val impl = output as? com.android.build.api.variant.impl.VariantOutputImpl
                 ?: return@forEach
-            impl.outputFileName = "OpenCover-$appVersion-${variant.name}.apk"
+            impl.outputFileName = "LeMytho-$appVersion-${variant.name}.apk"
         }
     }
 }

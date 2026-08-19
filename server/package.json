@@ -1,8 +1,8 @@
 {
-  "name": "opencover-server",
+  "name": "lemytho-server",
   "version": "0.1.0",
   "private": true,
-  "description": "Serveur relais temps réel OpenCover (multijoueur)",
+  "description": "Serveur relais temps réel Le Mytho (multijoueur)",
   "type": "module",
   "scripts": {
     "dev": "tsx watch src/index.ts",
