@@ -102,6 +102,10 @@ body {
   background-image: url("/images/players_bg.webp");
 }
 
+.bg-home {
+  background-image: url("/images/home_bg.webp");
+}
+
 .bg-setup {
   background-image: url("/images/setup_bg.webp");
 }
@@ -335,6 +339,29 @@ button {
 .card .role {
   font-size: 0.82rem;
   margin-top: 4px;
+}
+
+.home-title {
+  font-size: 2.6rem;
+}
+
+.rule-card {
+  margin-bottom: 10px;
+}
+
+.rule-card .name {
+  font-size: 1.05rem;
+  font-weight: 700;
+}
+
+.rule-hint {
+  margin-top: 2px;
+  font-size: 0.9rem;
+}
+
+.rule-goal {
+  margin-top: 4px;
+  font-size: 0.85rem;
 }
 
 .role-citizen {

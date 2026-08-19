@@ -22,6 +22,7 @@ import {
 } from "./protocol";
 
 export type Screen =
+  | "home"
   | "join"
   | "waiting"
   | "reveal"
@@ -55,7 +56,7 @@ export interface AppState {
 
 export function initialState(serverUrl: string, code: string | null): AppState {
   return {
-    screen: "join",
+    screen: code ? "join" : "home",
     connectionStatus: "disconnected",
     serverUrl,
     pseudo: "",

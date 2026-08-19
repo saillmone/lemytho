@@ -44,7 +44,7 @@ export function renderReveal(state: AppState, actions: Actions): HTMLElement {
               { class: "reveal-unknown" },
               scrim("Tu es l'Inconnu", "reveal-unknown-title"),
               h("div", { class: "spacer" }),
-              scrim("Tu ne reçois pas de mot.\nÉcoute les autres et devine le mot des Citoyens."),
+              scrim("Tu ne reçois pas de mot.\nSeul à connaître ton rôle, devine le mot des Citoyens sans te faire repérer."),
             )
           : h(
               "div",

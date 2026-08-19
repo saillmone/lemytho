@@ -162,7 +162,7 @@ fun RevealOwnScreen(
                                 )
                                 Spacer(Modifier.height(12.dp))
                                 ScrimText(
-                                    text = "Tu ne reçois pas de mot.\nÉcoute les autres et devine le mot des Citoyens.",
+                                    text = "Tu ne reçois pas de mot.\nSeul à connaître ton rôle, devine le mot des Citoyens sans te faire repérer.",
                                     style = MaterialTheme.typography.titleMedium,
                                     textAlign = TextAlign.Center
                                 )

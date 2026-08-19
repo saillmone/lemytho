@@ -8,6 +8,7 @@ import type { Actions } from "./actions";
 import { mount } from "./ui";
 import { PLAYER_REVEAL, PLAYER_VOTE } from "./protocol";
 import { renderJoin } from "./screens/join";
+import { renderHome } from "./screens/home";
 import { renderWaiting } from "./screens/waiting";
 import { renderReveal } from "./screens/reveal";
 import { renderBoard } from "./screens/board";
@@ -166,6 +167,9 @@ if (activeSession) {
 }
 
 const actions: Actions = {
+  showJoin() {
+    store.set({ screen: "join" });
+  },
   join(code, pseudo) {
     const normalized = code.trim().toUpperCase();
     const trimmedPseudo = pseudo.trim();
@@ -216,7 +220,7 @@ const actions: Actions = {
     clearSession();
     socket.disconnect();
     store.set({
-      screen: "join",
+      screen: "home",
       myPlayerId: null,
       lobbyCode: null,
       members: [],
@@ -270,6 +274,9 @@ const actions: Actions = {
 function render(): void {
   const state: AppState = store.state;
   switch (state.screen) {
+    case "home":
+      mount(root, renderHome(actions));
+      break;
     case "join":
       mount(root, renderJoin(state, actions));
       break;

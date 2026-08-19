@@ -118,7 +118,7 @@ fun RevealScreen(
                             )
                             Spacer(Modifier.height(12.dp))
                             Text(
-                                text = "Tu ne reçois pas de mot.\nÉcoute les autres et devine le mot des Citoyens.",
+                                text = "Tu ne reçois pas de mot.\nSeul à connaître ton rôle, devine le mot des Citoyens sans te faire repérer.",
                                 style = MaterialTheme.typography.titleMedium,
                                 color = Color.White.copy(alpha = 0.9f),
                                 textAlign = TextAlign.Center
