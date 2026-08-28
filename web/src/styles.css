@@ -166,6 +166,26 @@ h2 {
   flex: 1;
 }
 
+.center-stack {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+  gap: 8px;
+}
+
+.center-stack .field,
+.center-stack .btn {
+  width: 100%;
+}
+
+/* Remonte le statut (tentative / verdict) comme le bloc Inconnu
+   de l'écran de révélation (dégage le personnage). */
+.elim-status-raised {
+  transform: translateY(-128px);
+}
+
 .row {
   display: flex;
   align-items: center;

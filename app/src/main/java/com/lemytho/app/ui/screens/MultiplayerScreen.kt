@@ -83,6 +83,7 @@ fun MultiplayerNavHost(
     onLaunchGame: () -> Unit,
     onGuestRevealDone: () -> Unit,
     onGuestCastVote: (Int) -> Unit,
+    onGuestSubmitGuess: (String) -> Unit,
     onGuestSeeResults: () -> Unit,
     onGuestMarkReady: () -> Unit
 ) {
@@ -179,7 +180,9 @@ fun MultiplayerNavHost(
                 GuestEliminationScreen(
                     elimination = elimination,
                     isMe = elimination.playerId == state.myPlayerId,
-                    hasResult = state.guestResult != null,
+                    guestResult = state.guestResult,
+                    guessSubmitted = state.guessSubmitted,
+                    onSubmitGuess = onGuestSubmitGuess,
                     onSeeResults = onGuestSeeResults
                 )
             }
@@ -190,6 +193,7 @@ fun MultiplayerNavHost(
             if (result != null) {
                 GuestResultScreen(
                     result = result,
+                    unknownGuessCorrect = state.unknownGuessCorrect,
                     wantsReplay = state.wantsReplay,
                     onReady = onGuestMarkReady,
                     onQuit = onBack

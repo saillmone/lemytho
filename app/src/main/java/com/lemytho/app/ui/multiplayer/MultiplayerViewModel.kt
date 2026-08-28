@@ -5,6 +5,7 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import com.lemytho.app.BuildConfig
 import com.lemytho.app.data.local.WordRepository
+import com.lemytho.app.data.model.Role
 import com.lemytho.app.di.AppContainer
 import com.lemytho.app.di.PseudoStore
 import com.lemytho.app.di.ServerStore
@@ -14,6 +15,8 @@ import com.lemytho.app.net.LobbyResult
 import com.lemytho.app.net.Protocol
 import com.lemytho.app.net.ServerEvent
 import com.lemytho.app.ui.FunnyNames
+import com.lemytho.app.engine.Victory
+import com.lemytho.app.engine.WordGuessMatcher
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -245,6 +248,22 @@ class MultiplayerViewModel(
         _uiState.update { it.copy(hasVoted = true) }
     }
 
+    fun guestSubmitGuess(text: String) {
+        val state = _uiState.value
+        if (state.isHost || state.guessSubmitted) return
+        val myId = state.myPlayerId ?: return
+        val elimination = state.elimination ?: return
+        if (elimination.playerId != myId || elimination.role != Role.UNKNOWN) return
+        if (elimination.guessResolved) return
+        val trimmed = text.trim().take(WordGuessMatcher.MAX_GUESS_LENGTH)
+        if (trimmed.isEmpty()) return
+        connectionManager.sendToHost(
+            Protocol.EVENT_PLAYER_GUESS,
+            JSONObject().put("playerId", myId).put("text", trimmed)
+        )
+        _uiState.update { it.copy(guessSubmitted = true) }
+    }
+
     /** L'invité consulte le résultat final à son propre rythme. */
     fun guestSeeResults() {
         val state = _uiState.value
@@ -319,6 +338,8 @@ class MultiplayerViewModel(
                         elimination = null,
                         guestResult = null,
                         hasVoted = false,
+                        guessSubmitted = false,
+                        unknownGuessCorrect = null,
                         revealConfirmed = false,
                         screen = MultiplayerScreen.GuestReveal
                     )
@@ -335,6 +356,7 @@ class MultiplayerViewModel(
                         elimination = null,
                         guestResult = null,
                         hasVoted = false,
+                        guessSubmitted = false,
                         revealConfirmed = false,
                         screen = MultiplayerScreen.GuestBoard
                     )
@@ -349,6 +371,12 @@ class MultiplayerViewModel(
                         it.copy(
                             elimination = elimination,
                             guestResult = null,
+                            guessSubmitted = elimination.guessResolved || it.guessSubmitted,
+                            unknownGuessCorrect = if (elimination.guessResolved) {
+                                false
+                            } else {
+                                it.unknownGuessCorrect
+                            },
                             screen = MultiplayerScreen.GuestElimination
                         )
                     }
@@ -361,7 +389,20 @@ class MultiplayerViewModel(
                 // On mémorise le résultat mais on RESTE sur l'écran d'élimination :
                 // chaque invité choisit lui-même quand voir le score final. La manche
                 // est terminée pour cet invité jusqu'à la prochaine relance.
-                _uiState.update { it.copy(guestResult = result, inRound = false) }
+                _uiState.update {
+                    val victory = result?.victory
+                    val found = victory is Victory.Unknown && victory.byGuess
+                    val missedGuess = !found && it.elimination?.role == Role.UNKNOWN
+                    it.copy(
+                        guestResult = result,
+                        inRound = false,
+                        unknownGuessCorrect = when {
+                            found -> true
+                            missedGuess -> false
+                            else -> it.unknownGuessCorrect
+                        }
+                    )
+                }
             }
 
             Protocol.EVENT_GAME_REVEAL_ACK -> {
@@ -387,6 +428,8 @@ class MultiplayerViewModel(
                         elimination = null,
                         guestResult = null,
                         hasVoted = false,
+                        guessSubmitted = false,
+                        unknownGuessCorrect = null,
                         wantsReplay = false
                     )
                 }

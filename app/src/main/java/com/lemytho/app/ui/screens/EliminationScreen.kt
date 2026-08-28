@@ -1,26 +1,33 @@
 package com.lemytho.app.ui.screens
 
 import androidx.compose.foundation.Image
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -29,6 +36,7 @@ import com.lemytho.app.R
 import com.lemytho.app.data.model.Player
 import com.lemytho.app.data.model.Role
 import com.lemytho.app.engine.Victory
+import com.lemytho.app.engine.WordGuessMatcher
 import com.lemytho.app.ui.EliminationEvent
 
 /**
@@ -41,16 +49,17 @@ fun EliminationScreen(
     result: Victory?,
     turnNumber: Int,
     pendingUnknownGuess: Player?,
-    isSelf: Boolean = false,
+    canTypeGuess: Boolean,
+    useSelfCopy: Boolean,
     onContinue: () -> Unit,
-    onResolveUnknownGuess: (Boolean) -> Unit
+    onResolveUnknownGuess: (String) -> Unit
 ) {
     val background = when (elimination.role) {
         Role.CITIZEN -> R.drawable.eliminated_citizen
         Role.IMPOSTOR -> R.drawable.eliminated_impostor
         Role.UNKNOWN -> R.drawable.eliminated_unknown
     }
-    val title = if (isSelf) {
+    val title = if (useSelfCopy) {
         "Tu étais ${rolePhrase(elimination.role)}, tu as été éliminé !"
     } else {
         "${elimination.pseudo} était ${rolePhrase(elimination.role)}, il a été éliminé !"
@@ -78,14 +87,33 @@ fun EliminationScreen(
                 textAlign = TextAlign.Center
             )
 
-            Spacer(Modifier.weight(1f))
-
-            ScrimText(
-                text = nextStepText(result, pendingUnknownGuess, turnNumber, isSelf),
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.Bold,
-                textAlign = TextAlign.Center
-            )
+            Box(
+                modifier = Modifier
+                    .weight(1f)
+                    .fillMaxWidth(),
+                contentAlignment = Alignment.Center
+            ) {
+                val waitingForUnknownGuess = pendingUnknownGuess != null && !canTypeGuess
+                val raiseStatus = waitingForUnknownGuess || elimination.guessResolved
+                ScrimText(
+                    modifier = if (raiseStatus) {
+                        Modifier.offset(y = (-128).dp)
+                    } else {
+                        Modifier
+                    },
+                    text = nextStepText(
+                        result = result,
+                        pendingUnknownGuess = pendingUnknownGuess,
+                        elimination = elimination,
+                        canTypeGuess = canTypeGuess,
+                        useSelfCopy = useSelfCopy,
+                        turnNumber = turnNumber
+                    ),
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold,
+                    textAlign = TextAlign.Center
+                )
+            }
 
             Spacer(Modifier.height(16.dp))
 
@@ -102,28 +130,32 @@ fun EliminationScreen(
         }
     }
 
-    if (pendingUnknownGuess != null) {
-        UnknownGuessDialog(
-            player = pendingUnknownGuess,
-            isSelf = isSelf,
-            onResolve = onResolveUnknownGuess
-        )
+    if (pendingUnknownGuess != null && canTypeGuess) {
+        UnknownGuessDialog(onSubmit = onResolveUnknownGuess)
     }
 }
 
 private fun nextStepText(
     result: Victory?,
     pendingUnknownGuess: Player?,
-    turnNumber: Int,
-    isSelf: Boolean
+    elimination: EliminationEvent,
+    canTypeGuess: Boolean,
+    useSelfCopy: Boolean,
+    turnNumber: Int
 ): String =
     when {
-        result != null -> "La partie est terminée."
-        pendingUnknownGuess != null -> if (isSelf) {
+        pendingUnknownGuess != null && canTypeGuess ->
             "Tu as une dernière chance de deviner le mot des Citoyens."
-        } else {
-            "${pendingUnknownGuess.pseudo} a une dernière chance de deviner le mot des Citoyens."
-        }
+        pendingUnknownGuess != null ->
+            "${pendingUnknownGuess.pseudo} tente de deviner le mot des Citoyens…"
+        elimination.guessResolved && elimination.guessCorrect ->
+            if (useSelfCopy) {
+                "Tu as trouvé le mot des Citoyens !"
+            } else {
+                "${elimination.pseudo} a trouvé le mot des Citoyens !"
+            }
+        elimination.guessResolved -> "Ce n'était pas le mot des Citoyens."
+        result != null -> "La partie est terminée."
         else -> "Début du tour $turnNumber"
     }
 
@@ -135,10 +167,18 @@ private fun rolePhrase(role: Role): String = when (role) {
 
 @Composable
 private fun UnknownGuessDialog(
-    player: Player,
-    isSelf: Boolean,
-    onResolve: (Boolean) -> Unit
+    onSubmit: (String) -> Unit
 ) {
+    var text by remember { mutableStateOf("") }
+    var submitted by remember { mutableStateOf(false) }
+    val trimmed = text.trim()
+    val canSubmit = trimmed.isNotEmpty() && !submitted
+    val submit = {
+        if (canSubmit) {
+            submitted = true
+            onSubmit(trimmed)
+        }
+    }
     Dialog(onDismissRequest = { /* décision obligatoire : pas de fermeture */ }) {
         Surface(
             shape = RoundedCornerShape(16.dp),
@@ -156,26 +196,27 @@ private fun UnknownGuessDialog(
                 )
                 Spacer(Modifier.height(8.dp))
                 Text(
-                    text = if (isSelf) {
-                        "Tu as été éliminé. En tant qu'Inconnu, tu disposes d'une dernière tentative pour deviner le mot exact des Citoyens."
-                    } else {
-                        "${player.pseudo} a été éliminé. En tant qu'Inconnu, il dispose d'une dernière tentative pour deviner le mot exact des Citoyens."
-                    },
+                    text = "Tu as été éliminé. En tant qu'Inconnu, tu disposes d'une dernière tentative pour deviner le mot des Citoyens.",
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
                 Spacer(Modifier.height(16.dp))
+                OutlinedTextField(
+                    value = text,
+                    onValueChange = { if (it.length <= WordGuessMatcher.MAX_GUESS_LENGTH) text = it },
+                    modifier = Modifier.fillMaxWidth(),
+                    singleLine = true,
+                    enabled = !submitted,
+                    label = { Text("Le mot des Citoyens") },
+                    keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
+                    keyboardActions = KeyboardActions(onDone = { submit() })
+                )
+                Spacer(Modifier.height(16.dp))
                 Button(
-                    onClick = { onResolve(true) },
+                    onClick = submit,
+                    enabled = canSubmit,
                     modifier = Modifier.fillMaxWidth()
                 ) {
-                    Text(if (isSelf) "Tu as trouvé le mot" else "Il a trouvé le mot")
-                }
-                Spacer(Modifier.height(8.dp))
-                OutlinedButton(
-                    onClick = { onResolve(false) },
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Text(if (isSelf) "Tu t'es trompé" else "Il s'est trompé")
+                    Text("Proposer le mot")
                 }
             }
         }

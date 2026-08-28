@@ -23,10 +23,13 @@ import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -48,6 +51,7 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -56,6 +60,7 @@ import com.lemytho.app.data.model.Player
 import com.lemytho.app.data.model.PlayerStatus
 import com.lemytho.app.data.model.Role
 import com.lemytho.app.engine.Victory
+import com.lemytho.app.engine.WordGuessMatcher
 import com.lemytho.app.net.BoardSnapshot
 import com.lemytho.app.net.EliminationSnapshot
 import com.lemytho.app.net.ResultSnapshot
@@ -369,14 +374,22 @@ private fun GuestPlayerCard(player: com.lemytho.app.net.PublicPlayer, order: Int
 fun GuestEliminationScreen(
     elimination: EliminationSnapshot,
     isMe: Boolean,
-    hasResult: Boolean,
+    guestResult: ResultSnapshot?,
+    guessSubmitted: Boolean,
+    onSubmitGuess: (String) -> Unit,
     onSeeResults: () -> Unit
 ) {
+    val hasResult = guestResult != null
+    val guessFound = guestResult?.victory.let { it is Victory.Unknown && it.byGuess }
     val background = when (elimination.role) {
         Role.CITIZEN -> R.drawable.eliminated_citizen
         Role.IMPOSTOR -> R.drawable.eliminated_impostor
         Role.UNKNOWN -> R.drawable.eliminated_unknown
     }
+    val canTypeGuess = isMe &&
+        elimination.role == Role.UNKNOWN &&
+        !elimination.guessResolved &&
+        !hasResult
     Box(modifier = Modifier.fillMaxSize()) {
         Image(
             painter = painterResource(id = background),
@@ -399,33 +412,69 @@ fun GuestEliminationScreen(
                 textAlign = TextAlign.Center
             )
 
-            Spacer(Modifier.weight(1f))
+            val waitingForUnknownGuess = !canTypeGuess &&
+                elimination.role == Role.UNKNOWN &&
+                !elimination.guessResolved &&
+                !hasResult
+            val preStepText = guestGuessVerdict(
+                elimination = elimination,
+                isMe = isMe,
+                canTypeGuess = canTypeGuess,
+                guessFound = guessFound,
+                hasResult = hasResult
+            )
+            val raiseStatus = preStepText != null
 
-            if (!hasResult) {
-                val preStepText = when {
-                    elimination.guessResolved -> "Début du tour ${elimination.turnNumber}"
-                    elimination.role == Role.UNKNOWN -> if (isMe) {
-                        "Tu as une dernière chance de deviner le mot des Citoyens."
+            Box(
+                modifier = Modifier
+                    .weight(1f)
+                    .fillMaxWidth(),
+                contentAlignment = Alignment.Center
+            ) {
+                Column(
+                    modifier = if (raiseStatus) {
+                        Modifier.offset(y = (-128).dp)
                     } else {
-                        "${elimination.pseudo} a une dernière chance de deviner le mot des Citoyens."
+                        Modifier
+                    },
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    if (preStepText != null) {
+                        ScrimText(
+                            text = preStepText,
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.Bold,
+                            textAlign = TextAlign.Center
+                        )
                     }
-                    else -> "Début du tour ${elimination.turnNumber}"
+
+                    if (canTypeGuess) {
+                        Spacer(Modifier.height(16.dp))
+                        Surface(
+                            shape = RoundedCornerShape(16.dp),
+                            color = MaterialTheme.colorScheme.surface,
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Column(modifier = Modifier.padding(16.dp)) {
+                                GuestGuessInput(
+                                    submitted = guessSubmitted,
+                                    onSubmit = onSubmitGuess
+                                )
+                            }
+                        }
+                    }
                 }
+            }
+
+            if (!canTypeGuess && !waitingForUnknownGuess) {
+                Spacer(Modifier.height(16.dp))
                 ScrimText(
-                    text = preStepText,
+                    text = nextStepText(hasResult),
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold,
                     textAlign = TextAlign.Center
                 )
-                Spacer(Modifier.height(8.dp))
             }
-
-            ScrimText(
-                text = nextStepText(hasResult),
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.Bold,
-                textAlign = TextAlign.Center
-            )
 
             if (hasResult) {
                 Spacer(Modifier.height(16.dp))
@@ -440,12 +489,67 @@ fun GuestEliminationScreen(
     }
 }
 
+@Composable
+private fun GuestGuessInput(
+    submitted: Boolean,
+    onSubmit: (String) -> Unit
+) {
+    var text by remember { mutableStateOf("") }
+    val trimmed = text.trim()
+    val canSubmit = trimmed.isNotEmpty() && !submitted
+    val submit = {
+        if (canSubmit) onSubmit(trimmed)
+    }
+    OutlinedTextField(
+        value = text,
+        onValueChange = { if (it.length <= WordGuessMatcher.MAX_GUESS_LENGTH) text = it },
+        modifier = Modifier.fillMaxWidth(),
+        singleLine = true,
+        enabled = !submitted,
+        label = { Text("Le mot des Citoyens") },
+        keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
+        keyboardActions = KeyboardActions(onDone = { submit() })
+    )
+    Spacer(Modifier.height(12.dp))
+    Button(
+        onClick = submit,
+        enabled = canSubmit,
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        Text("Proposer le mot")
+    }
+}
+
 private fun eliminationPhrase(elimination: EliminationSnapshot, isMe: Boolean): String {
     val role = rolePhrase(elimination.role)
     return if (isMe) {
         "Tu étais $role, tu as été éliminé !"
     } else {
         "${elimination.pseudo} était $role, il a été éliminé !"
+    }
+}
+
+private fun guestGuessVerdict(
+    elimination: EliminationSnapshot,
+    isMe: Boolean,
+    canTypeGuess: Boolean,
+    guessFound: Boolean,
+    hasResult: Boolean
+): String? {
+    val missed = elimination.guessResolved ||
+        (hasResult && elimination.role == Role.UNKNOWN && !guessFound)
+    return when {
+        canTypeGuess -> "Tu as une dernière chance de deviner le mot des Citoyens."
+        elimination.role == Role.UNKNOWN && !elimination.guessResolved && !hasResult ->
+            "${elimination.pseudo} tente de deviner le mot des Citoyens…"
+        guessFound -> if (isMe) {
+            "Tu as trouvé le mot des Citoyens !"
+        } else {
+            "${elimination.pseudo} a trouvé le mot des Citoyens !"
+        }
+        missed -> "Ce n'était pas le mot des Citoyens."
+        hasResult -> null
+        else -> "Début du tour ${elimination.turnNumber}"
     }
 }
 
@@ -458,6 +562,7 @@ private fun nextStepText(hasResult: Boolean): String = when {
 @Composable
 fun GuestResultScreen(
     result: ResultSnapshot,
+    unknownGuessCorrect: Boolean?,
     wantsReplay: Boolean,
     onReady: () -> Unit,
     onQuit: () -> Unit
@@ -487,7 +592,7 @@ fun GuestResultScreen(
             )
             Spacer(Modifier.height(8.dp))
             ScrimText(
-                text = victorySubtitle(result.victory, result.players),
+                text = victorySubtitle(result.victory, result.players, unknownGuessCorrect),
                 style = MaterialTheme.typography.bodyMedium,
                 textAlign = TextAlign.Center
             )
@@ -646,23 +751,34 @@ private fun victoryTitle(result: Victory, players: List<Player>): String = when 
     }
 }
 
-private fun victorySubtitle(result: Victory, players: List<Player>): String = when (result) {
-    Victory.Ongoing -> ""
-    Victory.Citizen -> "Tous les Imposteurs et les Inconnus ont été éliminés."
-    Victory.Impostor -> "Au moins un Imposteur a survécu jusqu'à la fin."
-    Victory.Combined -> {
-        val impostors = players.count { it.role == Role.IMPOSTOR }
-        val unknowns = players.count { it.role == Role.UNKNOWN }
-        val impostorLabel = if (impostors <= 1) "l'Imposteur" else "les Imposteurs"
-        val unknownLabel = if (unknowns <= 1) "l'Inconnu" else "les Inconnus"
-        "Les Citoyens sont éliminés : $impostorLabel et $unknownLabel gagnent ensemble."
+private fun victorySubtitle(
+    result: Victory,
+    players: List<Player>,
+    unknownGuessCorrect: Boolean? = null
+): String {
+    val base = when (result) {
+        Victory.Ongoing -> ""
+        Victory.Citizen -> "Tous les Imposteurs et les Inconnus ont été éliminés."
+        Victory.Impostor -> "Au moins un Imposteur a survécu jusqu'à la fin."
+        Victory.Combined -> {
+            val impostors = players.count { it.role == Role.IMPOSTOR }
+            val unknowns = players.count { it.role == Role.UNKNOWN }
+            val impostorLabel = if (impostors <= 1) "l'Imposteur" else "les Imposteurs"
+            val unknownLabel = if (unknowns <= 1) "l'Inconnu" else "les Inconnus"
+            "Les Citoyens sont éliminés : $impostorLabel et $unknownLabel gagnent ensemble."
+        }
+        is Victory.Unknown -> if (result.byGuess) {
+            val winner = players.firstOrNull { it.id == result.winnerIds.firstOrNull() }
+            "${winner?.pseudo ?: "l'Inconnu"} a deviné le mot exact !"
+        } else {
+            "l'Inconnu a survécu jusqu'à la fin."
+        }
     }
-    is Victory.Unknown -> if (result.byGuess) {
-        val winner = players.firstOrNull { it.id == result.winnerIds.firstOrNull() }
-        "${winner?.pseudo ?: "l'Inconnu"} a deviné le mot exact !"
-    } else {
-        "l'Inconnu a survécu jusqu'à la fin."
+    if (unknownGuessCorrect == false) {
+        val missed = "L'Inconnu n'a pas trouvé le mot des Citoyens."
+        return if (base.isEmpty()) missed else "$base $missed"
     }
+    return base
 }
 
 private fun roleIcon(role: Role): ImageVector = when (role) {

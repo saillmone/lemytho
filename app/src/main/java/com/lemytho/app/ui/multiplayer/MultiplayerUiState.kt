@@ -53,6 +53,8 @@ data class MultiplayerUiState(
     val elimination: EliminationSnapshot? = null,
     val guestResult: ResultSnapshot? = null,
     val hasVoted: Boolean = false,
+    val guessSubmitted: Boolean = false,
+    val unknownGuessCorrect: Boolean? = null,
 
     // Manche en cours : l'invité participe-t-il à la manche actuelle ?
     val inRound: Boolean = false,

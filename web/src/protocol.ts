@@ -20,6 +20,7 @@ export const GAME_CANCELLED = "game:cancelled";
 export const PLAYER_REVEAL = "player:reveal";
 export const PLAYER_VOTE = "player:vote";
 export const PLAYER_READY = "player:ready";
+/** Texte de la devinette de l'Inconnu ({ playerId, text }). */
 export const PLAYER_GUESS = "player:guess";
 
 // --- Lobby ---

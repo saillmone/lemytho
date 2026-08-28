@@ -54,6 +54,7 @@ fun ResultScreen(
     players: List<Player>,
     result: Victory,
     scores: Map<Int, Int>,
+    unknownGuessCorrect: Boolean? = null,
     onReplay: () -> Unit,
     onReset: () -> Unit,
     isHost: Boolean = false,
@@ -84,7 +85,7 @@ fun ResultScreen(
             )
             Spacer(Modifier.height(8.dp))
             ScrimText(
-                text = victorySubtitle(result, players),
+                text = victorySubtitle(result, players, unknownGuessCorrect),
                 style = MaterialTheme.typography.bodyMedium,
                 textAlign = TextAlign.Center
             )
@@ -249,21 +250,32 @@ private fun roleColor(role: Role) = when (role) {
     Role.UNKNOWN -> MaterialTheme.colorScheme.tertiary
 }
 
-private fun victorySubtitle(result: Victory, players: List<Player>): String = when (result) {
-    Victory.Ongoing -> ""
-    Victory.Citizen -> "Tous les Imposteurs et les Inconnus ont été éliminés."
-    Victory.Impostor -> "Au moins un Imposteur a survécu jusqu'à la fin."
-    Victory.Combined -> {
-        val impostors = players.count { it.role == Role.IMPOSTOR }
-        val unknowns = players.count { it.role == Role.UNKNOWN }
-        val impostorLabel = if (impostors <= 1) "l'Imposteur" else "les Imposteurs"
-        val unknownLabel = if (unknowns <= 1) "l'Inconnu" else "les Inconnus"
-        "Les Citoyens sont éliminés : $impostorLabel et $unknownLabel gagnent ensemble."
+private fun victorySubtitle(
+    result: Victory,
+    players: List<Player>,
+    unknownGuessCorrect: Boolean? = null
+): String {
+    val base = when (result) {
+        Victory.Ongoing -> ""
+        Victory.Citizen -> "Tous les Imposteurs et les Inconnus ont été éliminés."
+        Victory.Impostor -> "Au moins un Imposteur a survécu jusqu'à la fin."
+        Victory.Combined -> {
+            val impostors = players.count { it.role == Role.IMPOSTOR }
+            val unknowns = players.count { it.role == Role.UNKNOWN }
+            val impostorLabel = if (impostors <= 1) "l'Imposteur" else "les Imposteurs"
+            val unknownLabel = if (unknowns <= 1) "l'Inconnu" else "les Inconnus"
+            "Les Citoyens sont éliminés : $impostorLabel et $unknownLabel gagnent ensemble."
+        }
+        is Victory.Unknown -> if (result.byGuess) {
+            val winner = players.firstOrNull { it.id == result.winnerIds.firstOrNull() }
+            "${winner?.pseudo ?: "l'Inconnu"} a deviné le mot exact !"
+        } else {
+            "l'Inconnu a survécu jusqu'à la fin."
+        }
     }
-    is Victory.Unknown -> if (result.byGuess) {
-        val winner = players.firstOrNull { it.id == result.winnerIds.firstOrNull() }
-        "${winner?.pseudo ?: "l'Inconnu"} a deviné le mot exact !"
-    } else {
-        "l'Inconnu a survécu jusqu'à la fin."
+    if (unknownGuessCorrect == false) {
+        val missed = "L'Inconnu n'a pas trouvé le mot des Citoyens."
+        return if (base.isEmpty()) missed else "$base $missed"
     }
+    return base
 }

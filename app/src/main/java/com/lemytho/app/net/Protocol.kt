@@ -46,7 +46,7 @@ object Protocol {
     /** L'invité se déclare prêt à rejouer (manche suivante). */
     const val EVENT_PLAYER_READY = "player:ready"
 
-    /** La devinette de l'Inconnu (validée ou non par le groupe). */
+    /** Texte de la devinette de l'Inconnu ({ playerId, text }). */
     const val EVENT_PLAYER_GUESS = "player:guess"
 
     /** Le serveur signale à l'hôte qu'un invité s'est déconnecté. */

@@ -13,6 +13,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.lemytho.app.data.model.PlayerStatus
+import com.lemytho.app.data.model.Role
 import com.lemytho.app.ui.screens.GameBoardScreen
 import com.lemytho.app.ui.screens.HomeScreen
 import com.lemytho.app.ui.screens.PlayersScreen
@@ -117,6 +118,7 @@ fun LeMythoAppRoot(
                         players = state.players,
                         result = result,
                         scores = state.totalScores,
+                        unknownGuessCorrect = state.unknownGuessCorrect,
                         onReplay = viewModel::replay,
                         onReset = if (state.multiplayerHost) {
                             {
@@ -174,12 +176,15 @@ fun LeMythoAppRoot(
                 if (elimination != null) {
                     val pendingGuess = state.pendingUnknownGuess
                         ?.let { id -> state.players.firstOrNull { it.id == id } }
+                    val isTypingDevice = !state.multiplayerHost ||
+                        elimination.playerId == Protocol.HOST_PLAYER_ID
                     EliminationScreen(
                         elimination = elimination,
                         result = state.result,
                         turnNumber = state.turnNumber,
                         pendingUnknownGuess = pendingGuess,
-                        isSelf = state.multiplayerHost && elimination.playerId == Protocol.HOST_PLAYER_ID,
+                        canTypeGuess = pendingGuess != null && isTypingDevice,
+                        useSelfCopy = isTypingDevice && elimination.role == Role.UNKNOWN,
                         onContinue = viewModel::continueAfterElimination,
                         onResolveUnknownGuess = viewModel::resolveUnknownGuess
                     )
@@ -218,6 +223,7 @@ fun LeMythoAppRoot(
                     },
                     onGuestRevealDone = multiplayerViewModel::guestRevealDone,
                     onGuestCastVote = multiplayerViewModel::guestCastVote,
+                    onGuestSubmitGuess = multiplayerViewModel::guestSubmitGuess,
                     onGuestSeeResults = multiplayerViewModel::guestSeeResults,
                     onGuestMarkReady = multiplayerViewModel::guestMarkReady
                 )

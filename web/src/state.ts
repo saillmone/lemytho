@@ -50,6 +50,8 @@ export interface AppState {
   elimination: EliminationSnapshot | null;
   guestResult: ResultSnapshot | null;
   hasVoted: boolean;
+  guessSubmitted: boolean;
+  unknownGuessCorrect: boolean | null;
   inRound: boolean;
   wantsReplay: boolean;
 }
@@ -74,6 +76,8 @@ export function initialState(serverUrl: string, code: string | null): AppState {
     elimination: null,
     guestResult: null,
     hasVoted: false,
+    guessSubmitted: false,
+    unknownGuessCorrect: null,
     inRound: false,
     wantsReplay: false,
   };
@@ -118,6 +122,8 @@ export function handleGameEvent(store: Store, name: string, data: unknown): void
         elimination: null,
         guestResult: null,
         hasVoted: false,
+        guessSubmitted: false,
+        unknownGuessCorrect: null,
         revealConfirmed: false,
         screen: "reveal",
       });
@@ -130,6 +136,7 @@ export function handleGameEvent(store: Store, name: string, data: unknown): void
         elimination: null,
         guestResult: null,
         hasVoted: false,
+        guessSubmitted: false,
         revealConfirmed: false,
         screen: "board",
       });
@@ -142,6 +149,10 @@ export function handleGameEvent(store: Store, name: string, data: unknown): void
         store.set({
           elimination,
           guestResult: null,
+          guessSubmitted: elimination.guessResolved || store.state.guessSubmitted,
+          unknownGuessCorrect: elimination.guessResolved
+            ? false
+            : store.state.unknownGuessCorrect,
           screen: "elimination",
         });
       }
@@ -151,7 +162,19 @@ export function handleGameEvent(store: Store, name: string, data: unknown): void
       if (!store.state.inRound) return;
       // On mémorise le résultat mais on reste sur l'écran d'élimination :
       // l'invité choisit lui-même quand voir le score final.
-      store.set({ guestResult: parseResult(data), inRound: false });
+      const parsed = parseResult(data);
+      const found = parsed?.victory.type === "UNKNOWN" && parsed.victory.byGuess;
+      const missedGuess =
+        !found && store.state.elimination?.role === "UNKNOWN";
+      store.set({
+        guestResult: parsed,
+        inRound: false,
+        unknownGuessCorrect: found
+          ? true
+          : missedGuess
+            ? false
+            : store.state.unknownGuessCorrect,
+      });
       break;
     }
     case GAME_REVEAL_ACK: {
@@ -174,6 +197,8 @@ export function handleGameEvent(store: Store, name: string, data: unknown): void
         elimination: null,
         guestResult: null,
         hasVoted: false,
+        guessSubmitted: false,
+        unknownGuessCorrect: null,
         wantsReplay: false,
       });
       break;

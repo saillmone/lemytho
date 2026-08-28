@@ -7,6 +7,7 @@ export interface Actions {
   quit(): void;
   guestRevealDone(): void;
   guestCastVote(targetId: number): void;
+  guestSubmitGuess(text: string): void;
   guestSeeResults(): void;
   guestMarkReady(): void;
 }

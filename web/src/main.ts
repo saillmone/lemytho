@@ -6,7 +6,7 @@ import { GuestSocket } from "./socket";
 import { createStore, handleGameEvent, initialState, type AppState } from "./state";
 import type { Actions } from "./actions";
 import { mount } from "./ui";
-import { PLAYER_REVEAL, PLAYER_VOTE } from "./protocol";
+import { PLAYER_GUESS, PLAYER_REVEAL, PLAYER_VOTE } from "./protocol";
 import { renderJoin } from "./screens/join";
 import { renderHome } from "./screens/home";
 import { renderWaiting } from "./screens/waiting";
@@ -234,6 +234,8 @@ const actions: Actions = {
       elimination: null,
       guestResult: null,
       hasVoted: false,
+      guessSubmitted: false,
+      unknownGuessCorrect: null,
       inRound: false,
       wantsReplay: false,
     });
@@ -251,6 +253,18 @@ const actions: Actions = {
     if (myId == null) return;
     socket.sendToHost(PLAYER_VOTE, { playerId: myId, targetId });
     store.set({ hasVoted: true });
+  },
+  guestSubmitGuess(text) {
+    const state = store.state;
+    const myId = state.myPlayerId;
+    const elimination = state.elimination;
+    if (myId == null || elimination == null || state.guessSubmitted) return;
+    if (elimination.playerId !== myId || elimination.role !== "UNKNOWN") return;
+    if (elimination.guessResolved) return;
+    const trimmed = text.trim().slice(0, 80);
+    if (trimmed.length === 0) return;
+    socket.sendToHost(PLAYER_GUESS, { playerId: myId, text: trimmed });
+    store.set({ guessSubmitted: true });
   },
   guestSeeResults() {
     if (store.state.guestResult == null) return;

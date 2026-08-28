@@ -11,6 +11,7 @@ import com.lemytho.app.di.AppContainer
 import com.lemytho.app.engine.GameEngine
 import com.lemytho.app.engine.Victory
 import com.lemytho.app.engine.VoteOutcome
+import com.lemytho.app.engine.WordGuessMatcher
 import com.lemytho.app.net.ConnectionManager
 import com.lemytho.app.net.HostSession
 import com.lemytho.app.net.LobbyMember
@@ -126,6 +127,7 @@ class GameViewModel(
                     tiedCandidates = emptySet(),
                     elimination = null,
                     pendingUnknownGuess = null,
+                    unknownGuessCorrect = null,
                     result = null,
                     finalScores = emptyMap(),
                     currentScreen = Screen.Reveal
@@ -271,20 +273,37 @@ class GameViewModel(
 
     // --- Ultime tentative de l'Inconnu ---
 
-    fun resolveUnknownGuess(validated: Boolean) {
+    fun resolveUnknownGuess(guess: String) {
         val state = _uiState.value
         val unknownId = state.pendingUnknownGuess ?: return
-        val base = state.copy(pendingUnknownGuess = null)
+        val trimmed = guess.trim().take(WordGuessMatcher.MAX_GUESS_LENGTH)
+        if (trimmed.isEmpty()) return
+        val citizenWord = state.wordPair?.citizenWord.orEmpty()
+        val validated = WordGuessMatcher.matchesCitizenWord(trimmed, citizenWord)
+        val base = state.copy(
+            pendingUnknownGuess = null,
+            unknownGuessCorrect = validated
+        )
         val resolved = if (validated) {
             val victory = Victory.Unknown(setOf(unknownId), byGuess = true)
             val roundScores = gameEngine.computeScores(state.players, victory)
             base.copy(
                 result = victory,
                 finalScores = roundScores,
-                totalScores = accumulateScores(state.totalScores, roundScores)
+                totalScores = accumulateScores(state.totalScores, roundScores),
+                elimination = base.elimination?.copy(
+                    guessResolved = true,
+                    guessCorrect = true
+                )
             )
         } else {
-            finalizeVictory(base)
+            val next = finalizeVictory(base)
+            next.copy(
+                elimination = next.elimination?.copy(
+                    guessResolved = true,
+                    guessCorrect = false
+                )
+            )
         }
         _uiState.value = resolved
         // Cas de l'Inconnu : le résultat n'est connu qu'après la résolution de la
@@ -294,8 +313,8 @@ class GameViewModel(
                 hostSession?.sendResult(resolved.players, resolved.result, resolved.totalScores)
                 hostSession?.sendPhase(Protocol.PHASE_RESULT)
             } else {
-                // Devinette fausse et partie encore en cours : on notifie les invités
-                // que la devinette est résolue pour qu'ils affichent « Début du tour X ».
+                // Devinette fausse et partie encore en cours : les invités affichent
+                // « Ce n'était pas le mot des Citoyens. »
                 resolved.elimination?.let { e ->
                     hostSession?.sendElimination(
                         playerId = e.playerId,
@@ -384,6 +403,7 @@ class GameViewModel(
                     tiedCandidates = emptySet(),
                     elimination = null,
                     pendingUnknownGuess = null,
+                    unknownGuessCorrect = null,
                     result = null,
                     finalScores = emptyMap(),
                     totalScores = if (isReplay) st.totalScores else emptyMap(),
@@ -426,6 +446,10 @@ class GameViewModel(
         when (event.name) {
             Protocol.EVENT_PLAYER_REVEAL -> onGuestReveal(event.data.optInt("playerId"))
             Protocol.EVENT_PLAYER_VOTE -> onGuestVote(event.data.optInt("playerId"), event.data.optInt("targetId"))
+            Protocol.EVENT_PLAYER_GUESS -> onGuestGuess(
+                event.data.optInt("playerId"),
+                event.data.optString("text")
+            )
             Protocol.EVENT_PLAYER_DISCONNECTED -> onPlayerDisconnected(event.data.optInt("playerId"))
         }
     }
@@ -509,6 +533,13 @@ class GameViewModel(
             if (!state.multiplayerHost) return@update state
             registerHostVote(state, playerId, targetId)
         }
+    }
+
+    private fun onGuestGuess(playerId: Int, text: String) {
+        val state = _uiState.value
+        if (!state.multiplayerHost) return
+        if (state.pendingUnknownGuess != playerId) return
+        resolveUnknownGuess(text)
     }
 
     // --- Helpers hôte ---

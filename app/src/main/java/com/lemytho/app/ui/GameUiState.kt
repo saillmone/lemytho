@@ -21,7 +21,9 @@ sealed interface Screen {
 data class EliminationEvent(
     val playerId: Int,
     val pseudo: String,
-    val role: Role
+    val role: Role,
+    val guessResolved: Boolean = false,
+    val guessCorrect: Boolean = false
 )
 
 /** Phase de vote en cours sur le plateau. */
@@ -72,6 +74,8 @@ data class GameUiState(
 
     // Ultime tentative de l'Inconnu (id du joueur en attente de devinette, sinon null)
     val pendingUnknownGuess: Int? = null,
+    // null = pas de devinette cette manche ; true/false = issue de la dernière tentative
+    val unknownGuessCorrect: Boolean? = null,
 
     // Fin de partie
     val result: Victory? = null,
