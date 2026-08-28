@@ -24,18 +24,24 @@ class GameEngineTest {
     }
 
     @Test
-    fun `les citoyens valent toujours l arrondi superieur de la moitie`() {
+    fun `les citoyens valent n moins le total d intrus`() {
         for (n in 3..20) {
             val distribution = engine.computeRoleDistribution(n)
-            assertEquals("citoyens incorrects pour n=$n", (n + 1) / 2, distribution.citizenCount)
+            assertEquals("citoyens incorrects pour n=$n", n - (n + 1) / 3, distribution.citizenCount)
         }
     }
 
     @Test
-    fun `le nombre de inconnu depend de la tranche de joueurs`() {
-        for (n in 3..10) assertEquals(1, engine.computeRoleDistribution(n).unknownCount)
-        for (n in 11..16) assertEquals(2, engine.computeRoleDistribution(n).unknownCount)
-        for (n in 17..20) assertEquals(3, engine.computeRoleDistribution(n).unknownCount)
+    fun `le nombre d inconnus suit la formule a partir de 4 joueurs`() {
+        for (n in 4..20) {
+            val intrus = (n + 1) / 3
+            val expectedUnknowns = (intrus + 1) / 3
+            assertEquals(
+                "inconnus incorrects pour n=$n",
+                expectedUnknowns,
+                engine.computeRoleDistribution(n).unknownCount
+            )
+        }
     }
 
     @Test
@@ -76,10 +82,10 @@ class GameEngineTest {
 
     @Test
     fun `repartitions de reference connues`() {
-        assertEquals(RoleDistribution(5, 4, 1), engine.computeRoleDistribution(10))
-        assertEquals(RoleDistribution(6, 3, 2), engine.computeRoleDistribution(11))
-        assertEquals(RoleDistribution(9, 5, 3), engine.computeRoleDistribution(17))
-        assertEquals(RoleDistribution(10, 7, 3), engine.computeRoleDistribution(20))
+        assertEquals(RoleDistribution(7, 2, 1), engine.computeRoleDistribution(10))
+        assertEquals(RoleDistribution(7, 3, 1), engine.computeRoleDistribution(11))
+        assertEquals(RoleDistribution(11, 4, 2), engine.computeRoleDistribution(17))
+        assertEquals(RoleDistribution(13, 5, 2), engine.computeRoleDistribution(20))
     }
 
     // --- assignRoles : mélange des rôles ---

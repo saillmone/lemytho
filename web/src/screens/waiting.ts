@@ -14,9 +14,10 @@ function roleDistributionLabel(playerCount: number, threePlayerIsUnknown = true)
   if (playerCount === 3) {
     return threePlayerIsUnknown ? "2 Citoyens · 1 Inconnu" : "2 Citoyens · 1 Imposteur";
   }
-  const citizenCount = Math.ceil(playerCount / 2);
-  const unknownCount = playerCount <= 10 ? 1 : playerCount <= 16 ? 2 : 3;
-  const impostorCount = playerCount - citizenCount - unknownCount;
+  const intrus = Math.floor((playerCount + 1) / 3);
+  const unknownCount = Math.floor((intrus + 1) / 3);
+  const impostorCount = intrus - unknownCount;
+  const citizenCount = playerCount - intrus;
   const parts = [citizenCount <= 1 ? "1 Citoyen" : `${citizenCount} Citoyens`];
   if (impostorCount > 0) {
     parts.push(impostorCount <= 1 ? "1 Imposteur" : `${impostorCount} Imposteurs`);

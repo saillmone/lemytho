@@ -53,13 +53,10 @@ class GameEngine(private val random: Random = Random.Default) {
                 RoleDistribution(citizenCount = 2, impostorCount = 1, unknownCount = 0)
             }
         }
-        val citizenCount = (playerCount + 1) / 2 // arrondi supérieur de N/2
-        val unknownCount = when (playerCount) {
-            in 3..10 -> 1
-            in 11..16 -> 2
-            else -> 3
-        }
-        val impostorCount = playerCount - citizenCount - unknownCount
+        val intrus = (playerCount + 1) / 3
+        val unknownCount = (intrus + 1) / 3
+        val impostorCount = intrus - unknownCount
+        val citizenCount = playerCount - intrus
         return RoleDistribution(citizenCount, impostorCount, unknownCount)
     }
 

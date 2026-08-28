@@ -3,10 +3,10 @@ package com.lemytho.app.engine
 /**
  * Résultat de la répartition des rôles pour un nombre de joueurs donné.
  *
- * Règle métier (cahier des charges §5) :
- * - citoyens = arrondi supérieur(N / 2)
- * - Inconnu = 1 (3-10 joueurs), 2 (11-16), 3 (17-20)
- * - imposteurs = reste (jamais négatif)
+ * Pour n ≥ 4 : intrus = (n+1)/3, inconnus = (intrus+1)/3,
+ * imposteurs = intrus − inconnus, citoyens = n − intrus.
+ * « Intrus » est un total de calcul (Imposteurs + Inconnus), pas un rôle.
+ * À 3 joueurs, le toggle force 2 Citoyens + 1 Inconnu ou 1 Imposteur.
  */
 data class RoleDistribution(
     val citizenCount: Int,

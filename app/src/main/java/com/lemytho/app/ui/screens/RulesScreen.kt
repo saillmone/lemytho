@@ -66,8 +66,8 @@ private val rulesPages = listOf(
     RulesPage(
         title = "l'Inconnu",
         subtitle = "Tu ne reçois aucun mot.",
-        description = "Seul à connaître ton rôle dès le départ, devine le mot des " +
-            "Citoyens sans te faire repérer.",
+        description = "Tu ne reçois pas de mot. Tu connais ton rôle dès le départ : " +
+            "devine le mot des Citoyens sans te faire repérer.",
         background = R.drawable.rules_unknown
     )
 )
