@@ -93,26 +93,38 @@ fun EliminationScreen(
                     .fillMaxWidth(),
                 contentAlignment = Alignment.Center
             ) {
-                val waitingForUnknownGuess = pendingUnknownGuess != null && !canTypeGuess
-                val raiseStatus = waitingForUnknownGuess || elimination.guessResolved
-                ScrimText(
-                    modifier = if (raiseStatus) {
-                        Modifier.offset(y = (-128).dp)
-                    } else {
-                        Modifier
-                    },
-                    text = nextStepText(
-                        result = result,
-                        pendingUnknownGuess = pendingUnknownGuess,
-                        elimination = elimination,
-                        canTypeGuess = canTypeGuess,
-                        useSelfCopy = useSelfCopy,
-                        turnNumber = turnNumber
-                    ),
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold,
-                    textAlign = TextAlign.Center
+                val messages = eliminationMessages(
+                    result = result,
+                    pendingUnknownGuess = pendingUnknownGuess,
+                    elimination = elimination,
+                    canTypeGuess = canTypeGuess,
+                    useSelfCopy = useSelfCopy,
+                    turnNumber = turnNumber
                 )
+                Column(
+                    modifier = Modifier.offset(y = (-128).dp),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    if (messages.verdict != null) {
+                        ScrimText(
+                            text = messages.verdict,
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.Bold,
+                            textAlign = TextAlign.Center
+                        )
+                    }
+                    if (messages.followUp != null) {
+                        if (messages.verdict != null) {
+                            Spacer(Modifier.height(8.dp))
+                        }
+                        ScrimText(
+                            text = messages.followUp,
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.Bold,
+                            textAlign = TextAlign.Center
+                        )
+                    }
+                }
             }
 
             Spacer(Modifier.height(16.dp))
@@ -135,29 +147,48 @@ fun EliminationScreen(
     }
 }
 
-private fun nextStepText(
+private data class EliminationMessages(
+    val verdict: String?,
+    val followUp: String?
+)
+
+private fun eliminationMessages(
     result: Victory?,
     pendingUnknownGuess: Player?,
     elimination: EliminationEvent,
     canTypeGuess: Boolean,
     useSelfCopy: Boolean,
     turnNumber: Int
-): String =
-    when {
-        pendingUnknownGuess != null && canTypeGuess ->
-            "Tu as une dernière chance de deviner le mot des Citoyens."
-        pendingUnknownGuess != null ->
-            "${pendingUnknownGuess.pseudo} tente de deviner le mot des Citoyens…"
-        elimination.guessResolved && elimination.guessCorrect ->
-            if (useSelfCopy) {
-                "Tu as trouvé le mot des Citoyens !"
-            } else {
-                "${elimination.pseudo} a trouvé le mot des Citoyens !"
-            }
-        elimination.guessResolved -> "Ce n'était pas le mot des Citoyens."
-        result != null -> "La partie est terminée."
-        else -> "Début du tour $turnNumber"
+): EliminationMessages {
+    val foundText = if (useSelfCopy) {
+        "Tu as trouvé le mot des Citoyens !"
+    } else {
+        "${elimination.pseudo} a trouvé le mot des Citoyens !"
     }
+    val over = "La partie est terminée."
+    val nextTurn = "Début du tour $turnNumber"
+    return when {
+        pendingUnknownGuess != null && canTypeGuess ->
+            EliminationMessages(
+                verdict = "Tu as une dernière chance de deviner le mot des Citoyens.",
+                followUp = null
+            )
+        pendingUnknownGuess != null ->
+            EliminationMessages(
+                verdict = "${pendingUnknownGuess.pseudo} tente de deviner le mot des Citoyens…",
+                followUp = null
+            )
+        elimination.guessResolved && elimination.guessCorrect ->
+            EliminationMessages(verdict = foundText, followUp = over)
+        elimination.guessResolved ->
+            EliminationMessages(
+                verdict = "Ce n'était pas le mot des Citoyens.",
+                followUp = if (result != null) over else nextTurn
+            )
+        result != null -> EliminationMessages(verdict = null, followUp = over)
+        else -> EliminationMessages(verdict = null, followUp = nextTurn)
+    }
+}
 
 private fun rolePhrase(role: Role): String = when (role) {
     Role.CITIZEN -> "un Citoyen"

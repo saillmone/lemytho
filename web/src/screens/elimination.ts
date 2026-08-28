@@ -47,8 +47,17 @@ function guessVerdict(
       : `${elimination.pseudo} a trouvé le mot des Citoyens !`;
   }
   if (missed) return "Ce n'était pas le mot des Citoyens.";
-  if (hasResult) return null;
-  return `Début du tour ${elimination.turnNumber}`;
+  return null;
+}
+
+function turnFollowUp(
+  canTypeGuess: boolean,
+  waitingForUnknownGuess: boolean,
+  hasResult: boolean,
+  turnNumber: number,
+): string | null {
+  if (canTypeGuess || waitingForUnknownGuess || hasResult) return null;
+  return `Début du tour ${turnNumber}`;
 }
 
 export function renderElimination(state: AppState, actions: Actions): HTMLElement {
@@ -95,6 +104,15 @@ export function renderElimination(state: AppState, actions: Actions): HTMLElemen
   if (preStepText) {
     mid.push(h("div", { class: "center" }, scrim(preStepText)));
   }
+  const followUp = turnFollowUp(
+    canTypeGuess,
+    waitingForUnknownGuess,
+    hasResult,
+    elimination.turnNumber,
+  );
+  if (followUp) {
+    mid.push(h("div", { class: "center" }, scrim(followUp)));
+  }
 
   if (canTypeGuess) {
     const guessInput = h("input", {
@@ -128,7 +146,7 @@ export function renderElimination(state: AppState, actions: Actions): HTMLElemen
     );
   }
 
-  const raiseStatus = Boolean(preStepText);
+  const raiseStatus = Boolean(preStepText || followUp);
   const midClass = raiseStatus
     ? "grow center-stack elim-status-raised"
     : "grow center-stack";

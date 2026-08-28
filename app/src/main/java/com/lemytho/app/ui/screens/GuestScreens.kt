@@ -423,7 +423,13 @@ fun GuestEliminationScreen(
                 guessFound = guessFound,
                 hasResult = hasResult
             )
-            val raiseStatus = preStepText != null
+            val turnFollowUp = guestTurnFollowUp(
+                canTypeGuess = canTypeGuess,
+                waitingForUnknownGuess = waitingForUnknownGuess,
+                hasResult = hasResult,
+                turnNumber = elimination.turnNumber
+            )
+            val raiseStatus = preStepText != null || turnFollowUp != null
 
             Box(
                 modifier = Modifier
@@ -442,6 +448,17 @@ fun GuestEliminationScreen(
                     if (preStepText != null) {
                         ScrimText(
                             text = preStepText,
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.Bold,
+                            textAlign = TextAlign.Center
+                        )
+                    }
+                    if (turnFollowUp != null) {
+                        if (preStepText != null) {
+                            Spacer(Modifier.height(8.dp))
+                        }
+                        ScrimText(
+                            text = turnFollowUp,
                             style = MaterialTheme.typography.titleMedium,
                             fontWeight = FontWeight.Bold,
                             textAlign = TextAlign.Center
@@ -548,9 +565,18 @@ private fun guestGuessVerdict(
             "${elimination.pseudo} a trouvé le mot des Citoyens !"
         }
         missed -> "Ce n'était pas le mot des Citoyens."
-        hasResult -> null
-        else -> "Début du tour ${elimination.turnNumber}"
+        else -> null
     }
+}
+
+private fun guestTurnFollowUp(
+    canTypeGuess: Boolean,
+    waitingForUnknownGuess: Boolean,
+    hasResult: Boolean,
+    turnNumber: Int
+): String? {
+    if (canTypeGuess || waitingForUnknownGuess || hasResult) return null
+    return "Début du tour $turnNumber"
 }
 
 private fun nextStepText(hasResult: Boolean): String = when {
