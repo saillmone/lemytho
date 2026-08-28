@@ -280,6 +280,11 @@ class GameViewModel(
         if (trimmed.isEmpty()) return
         val citizenWord = state.wordPair?.citizenWord.orEmpty()
         val validated = WordGuessMatcher.matchesCitizenWord(trimmed, citizenWord)
+        val guessText = if (validated) {
+            citizenWord.ifBlank { trimmed }
+        } else {
+            trimmed
+        }
         val base = state.copy(
             pendingUnknownGuess = null,
             unknownGuessCorrect = validated
@@ -293,7 +298,8 @@ class GameViewModel(
                 totalScores = accumulateScores(state.totalScores, roundScores),
                 elimination = base.elimination?.copy(
                     guessResolved = true,
-                    guessCorrect = true
+                    guessCorrect = true,
+                    guessText = guessText
                 )
             )
         } else {
@@ -301,29 +307,31 @@ class GameViewModel(
             next.copy(
                 elimination = next.elimination?.copy(
                     guessResolved = true,
-                    guessCorrect = false
+                    guessCorrect = false,
+                    guessText = guessText
                 )
             )
         }
         _uiState.value = resolved
         // Cas de l'Inconnu : le résultat n'est connu qu'après la résolution de la
         // devinette. On le diffuse ici (l'écran d'élimination est déjà affiché).
+        // Elimination AVANT résultat : les invités vident guestResult à chaque
+        // game:elimination.
         if (resolved.multiplayerHost) {
+            resolved.elimination?.let { e ->
+                hostSession?.sendElimination(
+                    playerId = e.playerId,
+                    pseudo = e.pseudo,
+                    role = e.role,
+                    turnNumber = resolved.turnNumber,
+                    guessResolved = e.guessResolved,
+                    guessCorrect = e.guessCorrect,
+                    guessText = e.guessText
+                )
+            }
             if (resolved.result != null) {
                 hostSession?.sendResult(resolved.players, resolved.result, resolved.totalScores)
                 hostSession?.sendPhase(Protocol.PHASE_RESULT)
-            } else {
-                // Devinette fausse et partie encore en cours : les invités affichent
-                // « Ce n'était pas le mot des Citoyens. »
-                resolved.elimination?.let { e ->
-                    hostSession?.sendElimination(
-                        playerId = e.playerId,
-                        pseudo = e.pseudo,
-                        role = e.role,
-                        turnNumber = resolved.turnNumber,
-                        guessResolved = true
-                    )
-                }
             }
         }
     }

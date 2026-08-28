@@ -58,11 +58,15 @@ class HostSession(private val connectionManager: ConnectionManager) {
         pseudo: String,
         role: Role,
         turnNumber: Int,
-        guessResolved: Boolean = false
+        guessResolved: Boolean = false,
+        guessCorrect: Boolean = false,
+        guessText: String? = null
     ) {
         connectionManager.broadcast(
             Protocol.EVENT_GAME_ELIMINATION,
-            GameProtocol.eliminationPayload(playerId, pseudo, role, turnNumber, guessResolved)
+            GameProtocol.eliminationPayload(
+                playerId, pseudo, role, turnNumber, guessResolved, guessCorrect, guessText
+            )
         )
     }
 

@@ -106,12 +106,19 @@ fun EliminationScreen(
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
                     if (messages.verdict != null) {
-                        ScrimText(
-                            text = messages.verdict,
-                            style = MaterialTheme.typography.titleMedium,
-                            fontWeight = FontWeight.Bold,
-                            textAlign = TextAlign.Center
-                        )
+                        val verdictPill = @Composable {
+                            ScrimText(
+                                text = messages.verdict,
+                                style = MaterialTheme.typography.titleMedium,
+                                fontWeight = FontWeight.Bold,
+                                textAlign = TextAlign.Center
+                            )
+                        }
+                        if (elimination.guessResolved && elimination.guessCorrect) {
+                            GuessWinSparkles { verdictPill() }
+                        } else {
+                            verdictPill()
+                        }
                     }
                     if (messages.followUp != null) {
                         if (messages.verdict != null) {
@@ -160,11 +167,6 @@ private fun eliminationMessages(
     useSelfCopy: Boolean,
     turnNumber: Int
 ): EliminationMessages {
-    val foundText = if (useSelfCopy) {
-        "Tu as trouvé le mot des Citoyens !"
-    } else {
-        "${elimination.pseudo} a trouvé le mot des Citoyens !"
-    }
     val over = "La partie est terminée."
     val nextTurn = "Début du tour $turnNumber"
     return when {
@@ -179,14 +181,44 @@ private fun eliminationMessages(
                 followUp = null
             )
         elimination.guessResolved && elimination.guessCorrect ->
-            EliminationMessages(verdict = foundText, followUp = over)
+            EliminationMessages(
+                verdict = unknownGuessVerdict(
+                    guessText = elimination.guessText,
+                    correct = true,
+                    useSelfCopy = useSelfCopy,
+                    pseudo = elimination.pseudo
+                ),
+                followUp = over
+            )
         elimination.guessResolved ->
             EliminationMessages(
-                verdict = "Ce n'était pas le mot des Citoyens.",
+                verdict = unknownGuessVerdict(
+                    guessText = elimination.guessText,
+                    correct = false,
+                    useSelfCopy = useSelfCopy,
+                    pseudo = elimination.pseudo
+                ),
                 followUp = if (result != null) over else nextTurn
             )
         result != null -> EliminationMessages(verdict = null, followUp = over)
         else -> EliminationMessages(verdict = null, followUp = nextTurn)
+    }
+}
+
+private fun unknownGuessVerdict(
+    guessText: String?,
+    correct: Boolean,
+    useSelfCopy: Boolean,
+    pseudo: String
+): String {
+    val win = if (useSelfCopy) "tu gagnes la partie !" else "il gagne la partie !"
+    val quoted = guessText?.takeIf { it.isNotBlank() }
+    return when {
+        quoted != null && correct -> "\"$quoted\" était le mot des Citoyens : $win"
+        quoted != null -> "\"$quoted\" n'était pas le mot des Citoyens."
+        correct && useSelfCopy -> "Tu as trouvé le mot des Citoyens : $win"
+        correct -> "$pseudo a trouvé le mot des Citoyens : $win"
+        else -> "Ce n'était pas le mot des Citoyens."
     }
 }
 

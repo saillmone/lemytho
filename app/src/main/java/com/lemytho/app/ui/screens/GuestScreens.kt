@@ -446,12 +446,19 @@ fun GuestEliminationScreen(
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
                     if (preStepText != null) {
-                        ScrimText(
-                            text = preStepText,
-                            style = MaterialTheme.typography.titleMedium,
-                            fontWeight = FontWeight.Bold,
-                            textAlign = TextAlign.Center
-                        )
+                        val verdictPill = @Composable {
+                            ScrimText(
+                                text = preStepText,
+                                style = MaterialTheme.typography.titleMedium,
+                                fontWeight = FontWeight.Bold,
+                                textAlign = TextAlign.Center
+                            )
+                        }
+                        if (guessFound || elimination.guessCorrect) {
+                            GuessWinSparkles { verdictPill() }
+                        } else {
+                            verdictPill()
+                        }
                     }
                     if (turnFollowUp != null) {
                         if (preStepText != null) {
@@ -553,19 +560,42 @@ private fun guestGuessVerdict(
     guessFound: Boolean,
     hasResult: Boolean
 ): String? {
-    val missed = elimination.guessResolved ||
-        (hasResult && elimination.role == Role.UNKNOWN && !guessFound)
+    val missed = (elimination.guessResolved && !elimination.guessCorrect) ||
+        (hasResult && elimination.role == Role.UNKNOWN && !guessFound && !elimination.guessCorrect)
     return when {
         canTypeGuess -> "Tu as une dernière chance de deviner le mot des Citoyens."
         elimination.role == Role.UNKNOWN && !elimination.guessResolved && !hasResult ->
             "${elimination.pseudo} tente de deviner le mot des Citoyens…"
-        guessFound -> if (isMe) {
-            "Tu as trouvé le mot des Citoyens !"
-        } else {
-            "${elimination.pseudo} a trouvé le mot des Citoyens !"
-        }
-        missed -> "Ce n'était pas le mot des Citoyens."
+        guessFound || elimination.guessCorrect -> unknownGuessVerdict(
+            guessText = elimination.guessText,
+            correct = true,
+            useSelfCopy = isMe,
+            pseudo = elimination.pseudo
+        )
+        missed -> unknownGuessVerdict(
+            guessText = elimination.guessText,
+            correct = false,
+            useSelfCopy = isMe,
+            pseudo = elimination.pseudo
+        )
         else -> null
+    }
+}
+
+private fun unknownGuessVerdict(
+    guessText: String?,
+    correct: Boolean,
+    useSelfCopy: Boolean,
+    pseudo: String
+): String {
+    val win = if (useSelfCopy) "tu gagnes la partie !" else "il gagne la partie !"
+    val quoted = guessText?.takeIf { it.isNotBlank() }
+    return when {
+        quoted != null && correct -> "\"$quoted\" était le mot des Citoyens : $win"
+        quoted != null -> "\"$quoted\" n'était pas le mot des Citoyens."
+        correct && useSelfCopy -> "Tu as trouvé le mot des Citoyens : $win"
+        correct -> "$pseudo a trouvé le mot des Citoyens : $win"
+        else -> "Ce n'était pas le mot des Citoyens."
     }
 }
 

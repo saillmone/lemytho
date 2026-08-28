@@ -23,7 +23,9 @@ data class EliminationEvent(
     val pseudo: String,
     val role: Role,
     val guessResolved: Boolean = false,
-    val guessCorrect: Boolean = false
+    val guessCorrect: Boolean = false,
+    /** Saisie (échec) ou mot du paquet (succès) ; null tant que non résolu. */
+    val guessText: String? = null
 )
 
 /** Phase de vote en cours sur le plateau. */

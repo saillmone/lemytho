@@ -34,7 +34,9 @@ data class EliminationSnapshot(
     val pseudo: String,
     val role: Role,
     val turnNumber: Int,
-    val guessResolved: Boolean = false
+    val guessResolved: Boolean = false,
+    val guessCorrect: Boolean = false,
+    val guessText: String? = null
 )
 
 /** Instantané du résultat final (rôles de tous + scores cumulés). */
@@ -103,7 +105,9 @@ object GameProtocol {
         pseudo: String,
         role: Role,
         turnNumber: Int,
-        guessResolved: Boolean = false
+        guessResolved: Boolean = false,
+        guessCorrect: Boolean = false,
+        guessText: String? = null
     ): JSONObject =
         JSONObject()
             .put("playerId", playerId)
@@ -111,6 +115,8 @@ object GameProtocol {
             .put("role", role.name)
             .put("turnNumber", turnNumber)
             .put("guessResolved", guessResolved)
+            .put("guessCorrect", guessCorrect)
+            .put("guessText", guessText?.takeIf { it.isNotBlank() } ?: JSONObject.NULL)
 
     fun resultPayload(
         players: List<Player>,
@@ -165,7 +171,9 @@ object GameProtocol {
             pseudo = obj.optString("pseudo"),
             role = role,
             turnNumber = obj.optInt("turnNumber"),
-            guessResolved = obj.optBoolean("guessResolved")
+            guessResolved = obj.optBoolean("guessResolved"),
+            guessCorrect = obj.optBoolean("guessCorrect"),
+            guessText = obj.optNullableString("guessText")
         )
     }
 

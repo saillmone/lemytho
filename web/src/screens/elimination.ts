@@ -25,6 +25,21 @@ function eliminationPhrase(elimination: EliminationSnapshot, isMe: boolean): str
     : `${elimination.pseudo} était ${role}, il a été éliminé !`;
 }
 
+function unknownGuessVerdict(
+  guessText: string | null,
+  correct: boolean,
+  isMe: boolean,
+  pseudo: string,
+): string {
+  const win = isMe ? "tu gagnes la partie !" : "il gagne la partie !";
+  const quoted = guessText?.trim() ? guessText : null;
+  if (quoted && correct) return `"${quoted}" était le mot des Citoyens : ${win}`;
+  if (quoted) return `"${quoted}" n'était pas le mot des Citoyens.`;
+  if (correct && isMe) return `Tu as trouvé le mot des Citoyens : ${win}`;
+  if (correct) return `${pseudo} a trouvé le mot des Citoyens : ${win}`;
+  return "Ce n'était pas le mot des Citoyens.";
+}
+
 function guessVerdict(
   elimination: EliminationSnapshot,
   isMe: boolean,
@@ -33,20 +48,28 @@ function guessVerdict(
   hasResult: boolean,
 ): string | null {
   const missed =
-    elimination.guessResolved ||
-    (hasResult && elimination.role === "UNKNOWN" && !guessFound);
+    (elimination.guessResolved && !elimination.guessCorrect) ||
+    (hasResult &&
+      elimination.role === "UNKNOWN" &&
+      !guessFound &&
+      !elimination.guessCorrect);
   if (canTypeGuess) {
     return "Tu as une dernière chance de deviner le mot des Citoyens.";
   }
   if (elimination.role === "UNKNOWN" && !elimination.guessResolved && !hasResult) {
     return `${elimination.pseudo} tente de deviner le mot des Citoyens…`;
   }
-  if (guessFound) {
-    return isMe
-      ? "Tu as trouvé le mot des Citoyens !"
-      : `${elimination.pseudo} a trouvé le mot des Citoyens !`;
+  if (guessFound || elimination.guessCorrect) {
+    return unknownGuessVerdict(
+      elimination.guessText,
+      true,
+      isMe,
+      elimination.pseudo,
+    );
   }
-  if (missed) return "Ce n'était pas le mot des Citoyens.";
+  if (missed) {
+    return unknownGuessVerdict(elimination.guessText, false, isMe, elimination.pseudo);
+  }
   return null;
 }
 
@@ -58,6 +81,13 @@ function turnFollowUp(
 ): string | null {
   if (canTypeGuess || waitingForUnknownGuess || hasResult) return null;
   return `Début du tour ${turnNumber}`;
+}
+
+function sparkleBurst(inner: HTMLElement): HTMLElement {
+  const sparks = Array.from({ length: 16 }, (_, i) =>
+    h("span", { class: `sparkle sparkle-${i}` }),
+  );
+  return h("div", { class: "sparkle-burst" }, inner, ...sparks);
 }
 
 export function renderElimination(state: AppState, actions: Actions): HTMLElement {
@@ -102,7 +132,11 @@ export function renderElimination(state: AppState, actions: Actions): HTMLElemen
     hasResult,
   );
   if (preStepText) {
-    mid.push(h("div", { class: "center" }, scrim(preStepText)));
+    const pill = scrim(preStepText);
+    const guessWin = guessFound || elimination.guessCorrect;
+    mid.push(
+      guessWin ? sparkleBurst(pill) : h("div", { class: "center" }, pill),
+    );
   }
   const followUp = turnFollowUp(
     canTypeGuess,

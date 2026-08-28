@@ -186,6 +186,64 @@ h2 {
   transform: translateY(-128px);
 }
 
+.sparkle-burst {
+  position: relative;
+  display: inline-flex;
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+  overflow: visible;
+}
+
+.sparkle-burst .sparkle {
+  position: absolute;
+  width: 11px;
+  height: 11px;
+  margin: -5.5px 0 0 -5.5px;
+  border-radius: 50%;
+  background: #ffd54f;
+  box-shadow: 0 0 8px 2px rgba(255, 213, 79, 0.85);
+  pointer-events: none;
+  animation: sparkle-out 2.8s ease-out forwards;
+}
+
+/* Départ sur le contour de la pastille, puis éclatement vers l'extérieur. */
+.sparkle-burst .sparkle-0  { left: 0;    top: 0;    --dx: -90px; --dy: -80px; }
+.sparkle-burst .sparkle-1  { left: 25%;  top: 0;    --dx: -30px; --dy: -95px; animation-delay: 80ms; }
+.sparkle-burst .sparkle-2  { left: 50%;  top: 0;    --dx: 0;     --dy: -100px; }
+.sparkle-burst .sparkle-3  { left: 75%;  top: 0;    --dx: 30px;  --dy: -95px; animation-delay: 120ms; }
+.sparkle-burst .sparkle-4  { left: 100%; top: 0;    --dx: 90px;  --dy: -80px; }
+.sparkle-burst .sparkle-5  { left: 100%; top: 50%;  --dx: 105px; --dy: 0; animation-delay: 80ms; }
+.sparkle-burst .sparkle-6  { left: 100%; top: 100%; --dx: 90px;  --dy: 80px; animation-delay: 160ms; }
+.sparkle-burst .sparkle-7  { left: 75%;  top: 100%; --dx: 30px;  --dy: 95px; }
+.sparkle-burst .sparkle-8  { left: 50%;  top: 100%; --dx: 0;     --dy: 100px; animation-delay: 80ms; }
+.sparkle-burst .sparkle-9  { left: 25%;  top: 100%; --dx: -30px; --dy: 95px; animation-delay: 160ms; }
+.sparkle-burst .sparkle-10 { left: 0;    top: 100%; --dx: -90px; --dy: 80px; }
+.sparkle-burst .sparkle-11 { left: 0;    top: 50%;  --dx: -105px; --dy: 0; animation-delay: 120ms; }
+.sparkle-burst .sparkle-12 { left: 12%;  top: 20%;  --dx: -70px; --dy: -50px; animation-delay: 200ms; }
+.sparkle-burst .sparkle-13 { left: 88%;  top: 20%;  --dx: 70px;  --dy: -50px; animation-delay: 200ms; }
+.sparkle-burst .sparkle-14 { left: 88%;  top: 80%;  --dx: 70px;  --dy: 50px; animation-delay: 240ms; }
+.sparkle-burst .sparkle-15 { left: 12%;  top: 80%;  --dx: -70px; --dy: 50px; animation-delay: 240ms; }
+
+@keyframes sparkle-out {
+  0% {
+    opacity: 0;
+    transform: translate(0, 0) scale(0.6);
+  }
+  12% {
+    opacity: 1;
+    transform: translate(calc(var(--dx) * 0.12), calc(var(--dy) * 0.12)) scale(1.15);
+  }
+  50% {
+    opacity: 1;
+    transform: translate(calc(var(--dx) * 0.55), calc(var(--dy) * 0.55)) scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: translate(var(--dx), var(--dy)) scale(0.4);
+  }
+}
+
 .row {
   display: flex;
   align-items: center;

@@ -176,16 +176,25 @@ class GameProtocolTest {
         assertEquals(Role.IMPOSTOR, snapshot.role)
         assertEquals(3, snapshot.turnNumber)
         assertFalse(snapshot.guessResolved)
+        assertFalse(snapshot.guessCorrect)
+        assertNull(snapshot.guessText)
     }
 
     @Test
     fun `aller-retour de l'elimination avec devinette resolue`() {
-        val payload = GameProtocol.eliminationPayload(2, "Bob", Role.UNKNOWN, 4, guessResolved = true)
+        val payload = GameProtocol.eliminationPayload(
+            2, "Bob", Role.UNKNOWN, 4,
+            guessResolved = true,
+            guessCorrect = true,
+            guessText = "Tour Eiffel"
+        )
         val snapshot = GameProtocol.parseElimination(payload)!!
 
         assertTrue(snapshot.guessResolved)
+        assertTrue(snapshot.guessCorrect)
         assertEquals(Role.UNKNOWN, snapshot.role)
         assertEquals(4, snapshot.turnNumber)
+        assertEquals("Tour Eiffel", snapshot.guessText)
     }
 
     // --- Aller-retour : résultat final ---

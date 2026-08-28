@@ -372,10 +372,10 @@ class MultiplayerViewModel(
                             elimination = elimination,
                             guestResult = null,
                             guessSubmitted = elimination.guessResolved || it.guessSubmitted,
-                            unknownGuessCorrect = if (elimination.guessResolved) {
-                                false
-                            } else {
-                                it.unknownGuessCorrect
+                            unknownGuessCorrect = when {
+                                elimination.guessCorrect -> true
+                                elimination.guessResolved -> false
+                                else -> it.unknownGuessCorrect
                             },
                             screen = MultiplayerScreen.GuestElimination
                         )

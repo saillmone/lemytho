@@ -150,9 +150,11 @@ export function handleGameEvent(store: Store, name: string, data: unknown): void
           elimination,
           guestResult: null,
           guessSubmitted: elimination.guessResolved || store.state.guessSubmitted,
-          unknownGuessCorrect: elimination.guessResolved
-            ? false
-            : store.state.unknownGuessCorrect,
+          unknownGuessCorrect: elimination.guessCorrect
+            ? true
+            : elimination.guessResolved
+              ? false
+              : store.state.unknownGuessCorrect,
           screen: "elimination",
         });
       }

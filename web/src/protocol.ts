@@ -64,6 +64,8 @@ export interface EliminationSnapshot {
   role: Role;
   turnNumber: number;
   guessResolved: boolean;
+  guessCorrect: boolean;
+  guessText: string | null;
 }
 
 export interface ResultPlayer {
@@ -189,6 +191,8 @@ export function parseElimination(data: unknown): EliminationSnapshot | null {
     role,
     turnNumber: optInt(o, "turnNumber"),
     guessResolved: optBool(o, "guessResolved"),
+    guessCorrect: optBool(o, "guessCorrect"),
+    guessText: optNullableString(o, "guessText"),
   };
 }
 
