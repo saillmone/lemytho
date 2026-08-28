@@ -7,6 +7,44 @@ import type { EliminationSnapshot, Role } from "../protocol";
 
 const MAX_GUESS_LENGTH = 80;
 
+/** Flag local : l'overlay votes n'est pas dans AppState. */
+let showVotes = false;
+let votesOverlayKey = "";
+
+function votesOverlay(elimination: EliminationSnapshot): HTMLElement {
+  const close = () => {
+    showVotes = false;
+    document.querySelector(".votes-backdrop")?.remove();
+  };
+  return h(
+    "div",
+    { class: "votes-backdrop" },
+    h(
+      "button",
+      {
+        class: "votes-close",
+        type: "button",
+        title: "Fermer",
+        ariaLabel: "Fermer",
+        onclick: close,
+      },
+      "×",
+    ),
+    h("h2", {}, "Votes"),
+    h(
+      "div",
+      { class: "vote-list-modal" },
+      ...elimination.votes.map((v) =>
+        h(
+          "div",
+          { class: "center vote-line" },
+          scrim(`${v.voterPseudo} → ${v.targetPseudo}`),
+        ),
+      ),
+    ),
+  );
+}
+
 function rolePhrase(role: Role): string {
   switch (role) {
     case "CITIZEN":
@@ -182,9 +220,42 @@ export function renderElimination(state: AppState, actions: Actions): HTMLElemen
 
   const raiseStatus = Boolean(preStepText || followUp);
   const midClass = raiseStatus
-    ? "grow center-stack elim-status-raised"
-    : "grow center-stack";
-  nodes.push(h("div", { class: midClass }, ...mid));
+    ? "center-stack elim-status-raised"
+    : "center-stack";
+  const voteKey = `${elimination.playerId}:${elimination.turnNumber}`;
+  if (votesOverlayKey !== voteKey) {
+    votesOverlayKey = voteKey;
+    showVotes = false;
+  }
+
+  const voteOpen =
+    elimination.votes.length > 0
+      ? h(
+          "div",
+          { class: "vote-open" },
+          h(
+            "button",
+            {
+              class: "btn votes",
+              onclick: () => {
+                showVotes = true;
+                const screen = document.querySelector(".screen");
+                if (screen && !screen.querySelector(".votes-backdrop")) {
+                  screen.append(votesOverlay(elimination));
+                }
+              },
+            },
+            "Afficher les votes",
+          ),
+          h(
+            "div",
+            { class: "center" },
+            scrim("Tu ne pourras plus revoir qui a voté pour qui."),
+          ),
+        )
+      : null;
+
+  nodes.push(h("div", { class: "grow vote-grow" }, h("div", { class: midClass }, ...mid), voteOpen));
 
   if (!canTypeGuess && !waitingForUnknownGuess) {
     nodes.push(
@@ -208,9 +279,13 @@ export function renderElimination(state: AppState, actions: Actions): HTMLElemen
     );
   }
 
-  return h(
+  const screen = h(
     "div",
     { class: `screen ${bgClass}` },
     h("div", { class: "screen-inner" }, ...nodes),
   );
+  if (showVotes && elimination.votes.length > 0) {
+    screen.append(votesOverlay(elimination));
+  }
+  return screen;
 }

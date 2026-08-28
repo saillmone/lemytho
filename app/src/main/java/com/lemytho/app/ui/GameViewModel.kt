@@ -255,12 +255,18 @@ class GameViewModel(
         val updatedPlayers = state.players.map { player ->
             if (player.id == targetId) player.copy(status = PlayerStatus.ELIMINATED) else player
         }
+        val voteReveals = voteRevealsFrom(state.votes, state.players)
         val base = state.copy(
             players = updatedPlayers,
             votePhase = VotePhase.IDLE,
             votes = emptyMap(),
             tiedCandidates = emptySet(),
-            elimination = EliminationEvent(target.id, target.pseudo, target.role),
+            elimination = EliminationEvent(
+                playerId = target.id,
+                pseudo = target.pseudo,
+                role = target.role,
+                votes = voteReveals
+            ),
             currentScreen = Screen.Elimination
         )
         return if (target.role == Role.UNKNOWN) {
@@ -269,6 +275,15 @@ class GameViewModel(
         } else {
             finalizeVictory(base)
         }
+    }
+
+    private fun voteRevealsFrom(votes: Map<Int, Int>, players: List<Player>): List<VoteReveal> {
+        val names = players.associate { it.id to it.pseudo }
+        return votes.mapNotNull { (voterId, targetId) ->
+            val voter = names[voterId] ?: return@mapNotNull null
+            val target = names[targetId] ?: return@mapNotNull null
+            VoteReveal(voterPseudo = voter, targetPseudo = target)
+        }.sortedBy { it.voterPseudo.lowercase() }
     }
 
     // --- Ultime tentative de l'Inconnu ---
@@ -326,7 +341,8 @@ class GameViewModel(
                     turnNumber = resolved.turnNumber,
                     guessResolved = e.guessResolved,
                     guessCorrect = e.guessCorrect,
-                    guessText = e.guessText
+                    guessText = e.guessText,
+                    votes = e.votes
                 )
             }
             if (resolved.result != null) {
@@ -593,7 +609,14 @@ class GameViewModel(
     private fun broadcastResolved(state: GameUiState) {
         state.elimination?.let { elimination ->
             hostSession?.sendElimination(
-                elimination.playerId, elimination.pseudo, elimination.role, state.turnNumber
+                playerId = elimination.playerId,
+                pseudo = elimination.pseudo,
+                role = elimination.role,
+                turnNumber = state.turnNumber,
+                guessResolved = elimination.guessResolved,
+                guessCorrect = elimination.guessCorrect,
+                guessText = elimination.guessText,
+                votes = elimination.votes
             )
         }
         when {

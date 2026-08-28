@@ -90,8 +90,7 @@ fun EliminationScreen(
             Box(
                 modifier = Modifier
                     .weight(1f)
-                    .fillMaxWidth(),
-                contentAlignment = Alignment.Center
+                    .fillMaxWidth()
             ) {
                 val messages = eliminationMessages(
                     result = result,
@@ -102,7 +101,9 @@ fun EliminationScreen(
                     turnNumber = turnNumber
                 )
                 Column(
-                    modifier = Modifier.offset(y = (-128).dp),
+                    modifier = Modifier
+                        .align(Alignment.Center)
+                        .offset(y = (-128).dp),
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
                     if (messages.verdict != null) {
@@ -132,6 +133,10 @@ fun EliminationScreen(
                         )
                     }
                 }
+                ShowVotesControl(
+                    votes = elimination.votes,
+                    modifier = Modifier.align(Alignment.Center)
+                )
             }
 
             Spacer(Modifier.height(16.dp))

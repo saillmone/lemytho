@@ -5,6 +5,7 @@ import com.lemytho.app.data.model.PlayerStatus
 import com.lemytho.app.data.model.Role
 import com.lemytho.app.engine.Victory
 import com.lemytho.app.ui.VotePhase
+import com.lemytho.app.ui.VoteReveal
 import org.json.JSONArray
 import org.json.JSONObject
 
@@ -36,7 +37,8 @@ data class EliminationSnapshot(
     val turnNumber: Int,
     val guessResolved: Boolean = false,
     val guessCorrect: Boolean = false,
-    val guessText: String? = null
+    val guessText: String? = null,
+    val votes: List<VoteReveal> = emptyList()
 )
 
 /** Instantané du résultat final (rôles de tous + scores cumulés). */
@@ -107,9 +109,16 @@ object GameProtocol {
         turnNumber: Int,
         guessResolved: Boolean = false,
         guessCorrect: Boolean = false,
-        guessText: String? = null
-    ): JSONObject =
-        JSONObject()
+        guessText: String? = null,
+        votes: List<VoteReveal> = emptyList()
+    ): JSONObject {
+        val votesArray = JSONArray()
+        votes.forEach { v ->
+            votesArray.put(
+                JSONObject().put("voter", v.voterPseudo).put("target", v.targetPseudo)
+            )
+        }
+        return JSONObject()
             .put("playerId", playerId)
             .put("pseudo", pseudo)
             .put("role", role.name)
@@ -117,6 +126,8 @@ object GameProtocol {
             .put("guessResolved", guessResolved)
             .put("guessCorrect", guessCorrect)
             .put("guessText", guessText?.takeIf { it.isNotBlank() } ?: JSONObject.NULL)
+            .put("votes", votesArray)
+    }
 
     fun resultPayload(
         players: List<Player>,
@@ -173,7 +184,8 @@ object GameProtocol {
             turnNumber = obj.optInt("turnNumber"),
             guessResolved = obj.optBoolean("guessResolved"),
             guessCorrect = obj.optBoolean("guessCorrect"),
-            guessText = obj.optNullableString("guessText")
+            guessText = obj.optNullableString("guessText"),
+            votes = parseVoteReveals(obj.optJSONArray("votes"))
         )
     }
 
@@ -230,6 +242,20 @@ object GameProtocol {
     private fun parseIntList(arr: JSONArray?): List<Int> {
         if (arr == null) return emptyList()
         return buildList { for (i in 0 until arr.length()) add(arr.optInt(i)) }
+    }
+
+    private fun parseVoteReveals(arr: JSONArray?): List<VoteReveal> {
+        if (arr == null) return emptyList()
+        return buildList {
+            for (i in 0 until arr.length()) {
+                val o = arr.optJSONObject(i) ?: continue
+                val voter = o.optString("voter")
+                val target = o.optString("target")
+                if (voter.isNotBlank() && target.isNotBlank()) {
+                    add(VoteReveal(voterPseudo = voter, targetPseudo = target))
+                }
+            }
+        }
     }
 
     private fun parseRole(value: String): Role? =

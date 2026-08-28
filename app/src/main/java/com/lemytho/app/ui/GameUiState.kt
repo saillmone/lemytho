@@ -17,6 +17,12 @@ sealed interface Screen {
     data object Rules : Screen
 }
 
+/** Un vote du tour décisif, affiché après clôture (doigt levé IRL). */
+data class VoteReveal(
+    val voterPseudo: String,
+    val targetPseudo: String
+)
+
 /** Joueur éliminé affiché sur l'écran intermédiaire post-vote. */
 data class EliminationEvent(
     val playerId: Int,
@@ -25,7 +31,8 @@ data class EliminationEvent(
     val guessResolved: Boolean = false,
     val guessCorrect: Boolean = false,
     /** Saisie (échec) ou mot du paquet (succès) ; null tant que non résolu. */
-    val guessText: String? = null
+    val guessText: String? = null,
+    val votes: List<VoteReveal> = emptyList()
 )
 
 /** Phase de vote en cours sur le plateau. */

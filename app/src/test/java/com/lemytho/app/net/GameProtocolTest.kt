@@ -5,6 +5,7 @@ import com.lemytho.app.data.model.PlayerStatus
 import com.lemytho.app.data.model.Role
 import com.lemytho.app.engine.Victory
 import com.lemytho.app.ui.VotePhase
+import com.lemytho.app.ui.VoteReveal
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
@@ -178,6 +179,27 @@ class GameProtocolTest {
         assertFalse(snapshot.guessResolved)
         assertFalse(snapshot.guessCorrect)
         assertNull(snapshot.guessText)
+        assertTrue(snapshot.votes.isEmpty())
+    }
+
+    @Test
+    fun `aller-retour de l'elimination avec votes`() {
+        val payload = GameProtocol.eliminationPayload(
+            playerId = 2,
+            pseudo = "Bob",
+            role = Role.CITIZEN,
+            turnNumber = 3,
+            votes = listOf(
+                VoteReveal("Alice", "Bob"),
+                VoteReveal("Carla", "Bob")
+            )
+        )
+        val snapshot = GameProtocol.parseElimination(payload)!!
+
+        assertEquals(2, snapshot.votes.size)
+        assertEquals("Alice", snapshot.votes[0].voterPseudo)
+        assertEquals("Bob", snapshot.votes[0].targetPseudo)
+        assertEquals("Carla", snapshot.votes[1].voterPseudo)
     }
 
     @Test

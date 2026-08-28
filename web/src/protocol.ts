@@ -58,6 +58,11 @@ export interface BoardSnapshot {
   tiedCandidates: number[];
 }
 
+export interface VoteReveal {
+  voterPseudo: string;
+  targetPseudo: string;
+}
+
 export interface EliminationSnapshot {
   playerId: number;
   pseudo: string;
@@ -66,6 +71,7 @@ export interface EliminationSnapshot {
   guessResolved: boolean;
   guessCorrect: boolean;
   guessText: string | null;
+  votes: VoteReveal[];
 }
 
 export interface ResultPlayer {
@@ -193,7 +199,19 @@ export function parseElimination(data: unknown): EliminationSnapshot | null {
     guessResolved: optBool(o, "guessResolved"),
     guessCorrect: optBool(o, "guessCorrect"),
     guessText: optNullableString(o, "guessText"),
+    votes: parseVoteReveals(o.votes),
   };
+}
+
+function parseVoteReveals(raw: unknown): VoteReveal[] {
+  if (!Array.isArray(raw)) return [];
+  return raw.flatMap((item) => {
+    const vo = asRecord(item);
+    const voter = optString(vo, "voter");
+    const target = optString(vo, "target");
+    if (!voter || !target) return [];
+    return [{ voterPseudo: voter, targetPseudo: target }];
+  });
 }
 
 export function parseResult(data: unknown): ResultSnapshot {

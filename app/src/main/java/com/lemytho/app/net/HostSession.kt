@@ -4,6 +4,7 @@ import com.lemytho.app.data.model.Player
 import com.lemytho.app.data.model.Role
 import com.lemytho.app.engine.Victory
 import com.lemytho.app.ui.VotePhase
+import com.lemytho.app.ui.VoteReveal
 
 /**
  * Projection de l'état complet de l'hôte vers les invités.
@@ -60,12 +61,13 @@ class HostSession(private val connectionManager: ConnectionManager) {
         turnNumber: Int,
         guessResolved: Boolean = false,
         guessCorrect: Boolean = false,
-        guessText: String? = null
+        guessText: String? = null,
+        votes: List<VoteReveal> = emptyList()
     ) {
         connectionManager.broadcast(
             Protocol.EVENT_GAME_ELIMINATION,
             GameProtocol.eliminationPayload(
-                playerId, pseudo, role, turnNumber, guessResolved, guessCorrect, guessText
+                playerId, pseudo, role, turnNumber, guessResolved, guessCorrect, guessText, votes
             )
         )
     }

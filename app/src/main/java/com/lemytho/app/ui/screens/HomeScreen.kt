@@ -27,6 +27,7 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.lemytho.app.BuildConfig
 import com.lemytho.app.R
 import com.lemytho.app.ui.theme.UnknownWhite
 import com.lemytho.app.ui.theme.SpecialElite
@@ -90,6 +91,13 @@ fun HomeScreen(
             }
 
             Spacer(Modifier.weight(1f))
+
+            ScrimText(
+                text = "v${BuildConfig.VERSION_NAME}",
+                style = MaterialTheme.typography.bodySmall,
+                color = Color.White.copy(alpha = 0.85f),
+                textAlign = TextAlign.Center
+            )
         }
 
         // Accès aux règles : petite icône ronde en haut à droite.

@@ -434,15 +434,14 @@ fun GuestEliminationScreen(
             Box(
                 modifier = Modifier
                     .weight(1f)
-                    .fillMaxWidth(),
-                contentAlignment = Alignment.Center
+                    .fillMaxWidth()
             ) {
                 Column(
-                    modifier = if (raiseStatus) {
-                        Modifier.offset(y = (-128).dp)
-                    } else {
-                        Modifier
-                    },
+                    modifier = Modifier
+                        .align(Alignment.Center)
+                        .then(
+                            if (raiseStatus) Modifier.offset(y = (-128).dp) else Modifier
+                        ),
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
                     if (preStepText != null) {
@@ -488,6 +487,10 @@ fun GuestEliminationScreen(
                         }
                     }
                 }
+                ShowVotesControl(
+                    votes = elimination.votes,
+                    modifier = Modifier.align(Alignment.Center)
+                )
             }
 
             if (!canTypeGuess && !waitingForUnknownGuess) {
