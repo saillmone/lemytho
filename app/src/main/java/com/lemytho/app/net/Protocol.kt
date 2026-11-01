@@ -35,6 +35,9 @@ object Protocol {
     /** La partie est annulée (plus assez de joueurs) : retour au salon. */
     const val EVENT_GAME_CANCELLED = "game:cancelled"
 
+    /** Reprise de manche : photo privée de l'état (hôte -> un joueur). */
+    const val EVENT_GAME_SYNC = "game:sync"
+
     // --- Client -> hôte (via relay:toHost) ---
 
     /** L'invité a terminé sa révélation (acknowledgement). */
@@ -49,8 +52,11 @@ object Protocol {
     /** Texte de la devinette de l'Inconnu ({ playerId, text }). */
     const val EVENT_PLAYER_GUESS = "player:guess"
 
-    /** Le serveur signale à l'hôte qu'un invité s'est déconnecté. */
-    const val EVENT_PLAYER_DISCONNECTED = "player:disconnected"
+    /** Présence (fil coupé / revenu), distincte d'un départ franc. */
+    const val EVENT_PLAYER_PRESENCE = "player:presence"
+
+    /** Départ franc (Quitter ou grâce salon hors manche). */
+    const val EVENT_PLAYER_LEFT = "player:left"
 
     /** Tous les événements serveur -> client que le client doit écouter. */
     val SERVER_TO_CLIENT_EVENTS = listOf(
@@ -61,7 +67,8 @@ object Protocol {
         EVENT_GAME_ELIMINATION,
         EVENT_GAME_RESULT,
         EVENT_GAME_REVEAL_ACK,
-        EVENT_GAME_CANCELLED
+        EVENT_GAME_CANCELLED,
+        EVENT_GAME_SYNC
     )
 
     /**
@@ -74,7 +81,8 @@ object Protocol {
         EVENT_PLAYER_VOTE,
         EVENT_PLAYER_READY,
         EVENT_PLAYER_GUESS,
-        EVENT_PLAYER_DISCONNECTED
+        EVENT_PLAYER_PRESENCE,
+        EVENT_PLAYER_LEFT
     )
 
     // --- Constantes de phase (payload de game:phase) ---
@@ -82,8 +90,15 @@ object Protocol {
     const val PHASE_REVEAL = "REVEAL"
     const val PHASE_CLUE = "CLUE"
     const val PHASE_VOTE = "VOTE"
+    const val PHASE_ELIMINATION = "ELIMINATION"
     const val PHASE_RESULT = "RESULT"
 
     /** Identifiant du joueur hôte (toujours 1, attribué par le serveur). */
     const val HOST_PLAYER_ID = 1
+
+    // --- Raisons de game:cancelled ---
+
+    const val CANCEL_NOT_ENOUGH_PLAYERS = "not_enough_players"
+    const val CANCEL_HOST_CANCELLED = "host_cancelled"
+    const val CANCEL_ROUND_LOST = "round_lost"
 }

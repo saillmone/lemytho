@@ -9,8 +9,11 @@ import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.suspendCancellableCoroutine
+import kotlinx.coroutines.withTimeoutOrNull
 import org.json.JSONObject
+import kotlin.coroutines.resume
 
 /**
  * Enveloppe du client Socket.IO en coroutines/Flow.
@@ -23,6 +26,7 @@ import org.json.JSONObject
 class ConnectionManager {
 
     private var socket: Socket? = null
+    private var connectedUrl: String? = null
 
     private val _status = MutableStateFlow<ConnectionStatus>(ConnectionStatus.Disconnected)
     val status: StateFlow<ConnectionStatus> = _status.asStateFlow()
@@ -32,12 +36,18 @@ class ConnectionManager {
 
     /** Ouvre une connexion vers [url] (ex. "http://10.0.2.2:3000"). */
     fun connect(url: String) {
+        val current = socket
+        if (current != null && connectedUrl == url) {
+            if (!current.connected()) current.connect()
+            return
+        }
         disconnect()
 
         _status.value = ConnectionStatus.Connecting
+        connectedUrl = url
         val options = IO.Options().apply {
             reconnection = true
-            reconnectionAttempts = 10
+            reconnectionAttempts = Integer.MAX_VALUE
             reconnectionDelay = 1000
             timeout = 10_000
         }
@@ -55,13 +65,11 @@ class ConnectionManager {
             _status.value = ConnectionStatus.Disconnected
         }
 
-        // Événements de lobby.
         newSocket.on(ServerEventNames.LOBBY_UPDATE) { args -> handleLobbyUpdate(args) }
         newSocket.on(ServerEventNames.LOBBY_CLOSED) {
             _events.tryEmit(ServerEvent.LobbyClosed)
         }
 
-        // Événements de jeu relayés par le serveur (invité ET hôte).
         Protocol.INCOMING_EVENTS.forEach { event ->
             newSocket.on(event) { args -> handleGameEvent(event, args) }
         }
@@ -70,28 +78,74 @@ class ConnectionManager {
         newSocket.connect()
     }
 
+    /** Attend CONNECT ou erreur. */
+    suspend fun awaitConnected(timeoutMs: Long = 15_000): Boolean {
+        if (_status.value is ConnectionStatus.Connected) return true
+        return withTimeoutOrNull(timeoutMs) {
+            status.first { it is ConnectionStatus.Connected }
+        } != null
+    }
+
     /** Ferme la connexion et libère les listeners. */
     fun disconnect() {
         socket?.off()
         socket?.disconnect()
         socket = null
+        connectedUrl = null
         _status.value = ConnectionStatus.Disconnected
     }
 
     /** Crée un salon (l'hôte) et attend la confirmation du serveur. */
-    suspend fun createLobby(pseudo: String): LobbyResult =
-        emitWithAck("lobby:create", JSONObject().put("pseudo", pseudo)) { ackArgs ->
+    suspend fun createLobby(pseudo: String, clientId: String): LobbyResult =
+        emitWithAck(
+            "lobby:create",
+            JSONObject().put("pseudo", pseudo).put("clientId", clientId)
+        ) { ackArgs ->
             parseLobbyAck(ackArgs)
         }
 
     /** Rejoint un salon (l'invité) et attend la confirmation du serveur. */
-    suspend fun joinLobby(code: String, pseudo: String): LobbyResult =
+    suspend fun joinLobby(code: String, pseudo: String, clientId: String): LobbyResult =
         emitWithAck(
             "lobby:join",
-            JSONObject().put("code", code).put("pseudo", pseudo)
+            JSONObject().put("code", code).put("pseudo", pseudo).put("clientId", clientId)
         ) { ackArgs ->
             parseLobbyAck(ackArgs)
         }
+
+    /** Départ franc : notifie le serveur avant de couper. */
+    suspend fun leaveLobby() {
+        val s = socket ?: return
+        if (!s.connected()) return
+        withTimeoutOrNull(2_000) {
+            suspendCancellableCoroutine { continuation ->
+                s.emit("lobby:leave", JSONObject(), Ack {
+                    if (continuation.isActive) continuation.resume(Unit)
+                })
+            }
+        }
+    }
+
+    /** Ping applicatif (ack 2 s) pour casser les sockets zombies. */
+    suspend fun heartbeat(): Boolean {
+        val s = socket ?: return false
+        if (!s.connected()) return false
+        return withTimeoutOrNull(2_000) {
+            suspendCancellableCoroutine { continuation ->
+                s.emit("lobby:heartbeat", JSONObject(), Ack {
+                    if (continuation.isActive) continuation.resume(true)
+                })
+            }
+        } ?: false
+    }
+
+    /** Hôte : la manche est finie (abort, résultat, reprise à vide). */
+    fun endRoundOnServer() {
+        val s = socket ?: return
+        if (s.connected()) {
+            s.emit("lobby:roundEnded")
+        }
+    }
 
     // --- Relais : invité -> hôte ---
 
@@ -152,7 +206,9 @@ class ConnectionManager {
             LobbyResult.Success(
                 code = obj.optString("code").ifBlank { null },
                 playerId = obj.optInt("playerId", -1),
-                members = parseMembers(obj.optJSONArray("members"))
+                members = parseMembers(obj.optJSONArray("members")),
+                resumed = obj.optBoolean("resumed", false),
+                inRound = obj.optBoolean("inRound", false)
             )
         } else {
             LobbyResult.Failure(
@@ -175,9 +231,10 @@ class ConnectionManager {
         parse: (Array<out Any>) -> LobbyResult
     ): LobbyResult {
         val s = socket ?: return LobbyResult.Failure("NOT_CONNECTED", "Non connecté au serveur")
+        if (!s.connected()) {
+            return LobbyResult.Failure("NOT_CONNECTED", "Non connecté au serveur")
+        }
         return suspendCancellableCoroutine { continuation ->
-            // IMPORTANT : l'Ack doit être le DERNIER argument, sinon le client
-            // Java Socket.IO ne le reconnaît pas et l'envoie comme donnée.
             s.emit(event, payload, Ack { args ->
                 if (continuation.isActive) {
                     continuation.resumeWith(Result.success(parse(args)))

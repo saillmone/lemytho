@@ -36,4 +36,8 @@ class AppContainer(context: Context) {
     val pseudoStore: PseudoStore = PseudoStore(context)
 
     val serverStore: ServerStore = ServerStore(context)
+
+    val clientIdStore: ClientIdStore = ClientIdStore(context)
+
+    val lobbySessionStore: LobbySessionStore = LobbySessionStore(context)
 }

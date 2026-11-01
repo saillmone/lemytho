@@ -1,6 +1,7 @@
 package com.lemytho.app.ui
 
 import com.lemytho.app.data.model.Player
+import com.lemytho.app.data.model.PlayerStatus
 import com.lemytho.app.data.model.Role
 import com.lemytho.app.data.model.WordPair
 import com.lemytho.app.engine.Victory
@@ -45,6 +46,18 @@ enum class VotePhase {
 
     /** Second tour : restreint aux ex æquo. */
     SECOND_ROUND
+}
+
+/** Personne n'est éliminé : égalité totale, ou 0 bulletin après skip-wait. */
+enum class NoElimination {
+    TIE,
+    NO_VOTES
+}
+
+fun noEliminationHint(reason: NoElimination?): String? = when (reason) {
+    NoElimination.TIE -> "Égalité : personne n'est éliminé. Nouvel indice."
+    NoElimination.NO_VOTES -> "Personne n'est éliminé (aucun vote). Nouvel indice."
+    null -> null
 }
 
 /**
@@ -95,6 +108,32 @@ data class GameUiState(
     val multiplayerHost: Boolean = false,
     val revealAcks: Set<Int> = emptySet(),
 
-    // La partie a été annulée (plus assez de joueurs) : l'hôte doit revenir au salon.
-    val hostAborted: Boolean = false
+    /** Joueurs de la manche dont le fil est coupé (pas éliminés). */
+    val offlinePlayerIds: Set<Int> = emptySet(),
+
+    /** Ids ignorés pour le tour de vote courant (« Ne plus attendre »). */
+    val skippedVoters: Set<Int> = emptySet(),
+
+    /** Skip d'élimination affiché tant que le prochain vote n'a pas commencé. */
+    val noElimination: NoElimination? = null,
+
+    // Raison d'annulation (`Protocol.CANCEL_*`) : l'hôte doit revenir au salon.
+    val hostAbortReason: String? = null
 )
+
+/** Ids hors ligne encore bloquants pour l'étape courante (bouton skip). */
+fun GameUiState.skippablePlayerIds(): Set<Int> {
+    val offlineActive = players
+        .filter { it.id in offlinePlayerIds && it.status == PlayerStatus.ACTIVE }
+        .map { it.id }
+        .toSet()
+    return when {
+        currentScreen == Screen.Reveal -> offlineActive - revealAcks
+        currentScreen == Screen.Elimination -> {
+            val pending = pendingUnknownGuess ?: return emptySet()
+            if (pending in offlineActive) setOf(pending) else emptySet()
+        }
+        votePhase != VotePhase.IDLE -> offlineActive - skippedVoters - votes.keys
+        else -> emptySet()
+    }
+}

@@ -1,45 +1,44 @@
 // Élimination vue par un invité (miroir de GuestEliminationScreen).
 
-import { h, scrim } from "../ui";
+import { h, roleGlyph, scrim, sessionBanners } from "../ui";
 import type { AppState } from "../state";
 import type { Actions } from "../actions";
-import type { EliminationSnapshot, Role } from "../protocol";
+import { roleCssClass, type EliminationSnapshot, type Role } from "../protocol";
 
 const MAX_GUESS_LENGTH = 80;
 
-/** Flag local : l'overlay votes n'est pas dans AppState. */
-let showVotes = false;
-let votesOverlayKey = "";
+function voteParty(
+  pseudo: string,
+  elimination: EliminationSnapshot,
+  myPseudo: string | null,
+): HTMLElement {
+  const eliminated = pseudo === elimination.pseudo;
+  const label = myPseudo != null && pseudo === myPseudo ? `${pseudo} (moi)` : pseudo;
+  const name = h(
+    "span",
+    { class: eliminated ? `vote-elim ${roleCssClass(elimination.role)}` : "" },
+    label,
+  );
+  if (!eliminated) return h("span", { class: "vote-party" }, name);
+  return h("span", { class: "vote-party" }, roleGlyph(elimination.role), name);
+}
 
-function votesOverlay(elimination: EliminationSnapshot): HTMLElement {
-  const close = () => {
-    showVotes = false;
-    document.querySelector(".votes-backdrop")?.remove();
-  };
+function voteListInline(
+  elimination: EliminationSnapshot,
+  myPseudo: string | null,
+  compact: boolean,
+): HTMLElement | null {
+  if (elimination.votes.length === 0) return null;
   return h(
     "div",
-    { class: "votes-backdrop" },
-    h(
-      "button",
-      {
-        class: "votes-close",
-        type: "button",
-        title: "Fermer",
-        ariaLabel: "Fermer",
-        onclick: close,
-      },
-      "×",
-    ),
-    h("h2", {}, "Votes"),
-    h(
-      "div",
-      { class: "vote-list-modal" },
-      ...elimination.votes.map((v) =>
-        h(
-          "div",
-          { class: "center vote-line" },
-          scrim(`${v.voterPseudo} → ${v.targetPseudo}`),
-        ),
+    { class: compact ? "vote-list-inline compact" : "vote-list-inline" },
+    ...elimination.votes.map((v) =>
+      h(
+        "div",
+        { class: "vote-line" },
+        voteParty(v.voterPseudo, elimination, myPseudo),
+        " → ",
+        voteParty(v.targetPseudo, elimination, myPseudo),
       ),
     ),
   );
@@ -133,6 +132,10 @@ export function renderElimination(state: AppState, actions: Actions): HTMLElemen
   if (!elimination) return h("div", { class: "screen" }, "…");
 
   const isMe = elimination.playerId === state.myPlayerId;
+  const myPseudo =
+    state.board?.players.find((p) => p.playerId === state.myPlayerId)?.pseudo ??
+    state.members.find((m) => m.playerId === state.myPlayerId)?.pseudo ??
+    null;
   const hasResult = state.guestResult != null;
   const guessFound =
     state.guestResult?.victory.type === "UNKNOWN" &&
@@ -152,6 +155,7 @@ export function renderElimination(state: AppState, actions: Actions): HTMLElemen
 
   const nodes: (Node | null)[] = [
     h("div", { class: "spacer-lg" }),
+    sessionBanners(state),
     h("h1", { class: "center" }, scrim(eliminationPhrase(elimination, isMe))),
   ];
 
@@ -161,7 +165,6 @@ export function renderElimination(state: AppState, actions: Actions): HTMLElemen
     !elimination.guessResolved &&
     !hasResult;
 
-  const mid: (Node | null)[] = [];
   const preStepText = guessVerdict(
     elimination,
     isMe,
@@ -169,24 +172,21 @@ export function renderElimination(state: AppState, actions: Actions): HTMLElemen
     guessFound,
     hasResult,
   );
-  if (preStepText) {
-    const pill = scrim(preStepText);
-    const guessWin = guessFound || elimination.guessCorrect;
-    mid.push(
-      guessWin ? sparkleBurst(pill) : h("div", { class: "center" }, pill),
-    );
-  }
   const followUp = turnFollowUp(
     canTypeGuess,
     waitingForUnknownGuess,
     hasResult,
     elimination.turnNumber,
   );
-  if (followUp) {
-    mid.push(h("div", { class: "center" }, scrim(followUp)));
-  }
+  const verdictNode = preStepText
+    ? guessFound || elimination.guessCorrect
+      ? sparkleBurst(scrim(preStepText))
+      : h("div", { class: "center" }, scrim(preStepText))
+    : null;
 
+  const mid: (Node | null)[] = [voteListInline(elimination, myPseudo, canTypeGuess)];
   if (canTypeGuess) {
+    if (verdictNode) mid.push(verdictNode);
     const guessInput = h("input", {
       type: "text",
       placeholder: "Le mot des Citoyens",
@@ -210,67 +210,36 @@ export function renderElimination(state: AppState, actions: Actions): HTMLElemen
       submit.disabled = state.guessSubmitted || guessInput.value.trim().length === 0;
     };
     guessInput.addEventListener("input", syncSubmit);
+    guessInput.addEventListener("focus", () => {
+      requestAnimationFrame(() =>
+        guessInput.scrollIntoView({ block: "nearest", behavior: "smooth" }),
+      );
+    });
     syncSubmit();
 
-    mid.push(
-      h("div", { class: "field" }, guessInput),
-      submit,
-    );
+    mid.push(h("div", { class: "field" }, guessInput), submit);
   }
 
-  const raiseStatus = Boolean(preStepText || followUp);
-  const midClass = raiseStatus
-    ? "center-stack elim-status-raised"
-    : "center-stack";
-  const voteKey = `${elimination.playerId}:${elimination.turnNumber}`;
-  if (votesOverlayKey !== voteKey) {
-    votesOverlayKey = voteKey;
-    showVotes = false;
-  }
+  nodes.push(
+    h("div", { class: canTypeGuess ? "elim-mid has-guess" : "elim-mid" }, ...mid),
+  );
 
-  const voteOpen =
-    elimination.votes.length > 0
-      ? h(
+  const footer: (Node | null)[] = [];
+  if (!canTypeGuess) {
+    if (verdictNode) footer.push(verdictNode);
+    if (followUp) footer.push(h("div", { class: "center" }, scrim(followUp)));
+    if (!waitingForUnknownGuess) {
+      footer.push(
+        h(
           "div",
-          { class: "vote-open" },
-          h(
-            "button",
-            {
-              class: "btn votes",
-              onclick: () => {
-                showVotes = true;
-                const screen = document.querySelector(".screen");
-                if (screen && !screen.querySelector(".votes-backdrop")) {
-                  screen.append(votesOverlay(elimination));
-                }
-              },
-            },
-            "Afficher les votes",
-          ),
-          h(
-            "div",
-            { class: "center" },
-            scrim("Tu ne pourras plus revoir qui a voté pour qui."),
-          ),
-        )
-      : null;
-
-  nodes.push(h("div", { class: "grow vote-grow" }, h("div", { class: midClass }, ...mid), voteOpen));
-
-  if (!canTypeGuess && !waitingForUnknownGuess) {
-    nodes.push(
-      h("div", { class: "spacer" }),
-      h(
-        "div",
-        { class: "center" },
-        scrim(hasResult ? "La partie est terminée." : "En attente du Maître du Jeu…"),
-      ),
-    );
+          { class: "center" },
+          scrim(hasResult ? "La partie est terminée." : "En attente du Maître du Jeu…"),
+        ),
+      );
+    }
   }
-
   if (hasResult) {
-    nodes.push(
-      h("div", { class: "spacer" }),
+    footer.push(
       h(
         "button",
         { class: "btn", onclick: () => actions.guestSeeResults() },
@@ -278,14 +247,13 @@ export function renderElimination(state: AppState, actions: Actions): HTMLElemen
       ),
     );
   }
+  if (footer.length > 0) {
+    nodes.push(h("div", { class: "elim-footer" }, ...footer));
+  }
 
-  const screen = h(
+  return h(
     "div",
-    { class: `screen ${bgClass}` },
+    { class: `screen ${bgClass}${canTypeGuess ? " has-ime" : ""}` },
     h("div", { class: "screen-inner" }, ...nodes),
   );
-  if (showVotes && elimination.votes.length > 0) {
-    screen.append(votesOverlay(elimination));
-  }
-  return screen;
 }

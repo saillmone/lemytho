@@ -5,6 +5,9 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.viewModels
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
+import androidx.lifecycle.ProcessLifecycleOwner
 import com.lemytho.app.ui.GameViewModel
 import com.lemytho.app.ui.GameViewModelFactory
 import com.lemytho.app.ui.LeMythoAppRoot
@@ -27,6 +30,13 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         handleInvitationIntent()
+        ProcessLifecycleOwner.get().lifecycle.addObserver(
+            LifecycleEventObserver { _, event ->
+                if (event == Lifecycle.Event.ON_START) {
+                    multiplayerViewModel.onAppForeground()
+                }
+            }
+        )
         setContent {
             LeMythoTheme {
                 LeMythoAppRoot(

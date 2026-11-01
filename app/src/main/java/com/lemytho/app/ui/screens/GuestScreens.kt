@@ -6,16 +6,20 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
@@ -62,10 +66,67 @@ import com.lemytho.app.data.model.Role
 import com.lemytho.app.engine.Victory
 import com.lemytho.app.engine.WordGuessMatcher
 import com.lemytho.app.net.BoardSnapshot
+import com.lemytho.app.net.ConnectionStatus
 import com.lemytho.app.net.EliminationSnapshot
 import com.lemytho.app.net.ResultSnapshot
+import com.lemytho.app.ui.NoElimination
 import com.lemytho.app.ui.VotePhase
+import com.lemytho.app.ui.noEliminationHint
 import com.lemytho.app.ui.theme.SpecialElite
+
+/** Bandeaux invité : fil coupé, hôte en pause, attente de sync. */
+@Composable
+fun GuestSessionBanners(
+    connectionStatus: ConnectionStatus,
+    hostPaused: Boolean,
+    awaitingSync: Boolean
+) {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp, vertical = 4.dp),
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        if (connectionStatus !is ConnectionStatus.Connected) {
+            StatusBanner {
+                Text(
+                    text = "Hors ligne — retourne sur le jeu…",
+                    modifier = Modifier.padding(12.dp),
+                    style = MaterialTheme.typography.bodyMedium,
+                    fontWeight = FontWeight.Bold,
+                    color = Color.White,
+                    textAlign = TextAlign.Center
+                )
+            }
+        }
+        if (hostPaused) {
+            Spacer(Modifier.height(4.dp))
+            StatusBanner {
+                Text(
+                    text = "Maître du Jeu hors ligne — partie en pause",
+                    modifier = Modifier.padding(12.dp),
+                    style = MaterialTheme.typography.bodyMedium,
+                    fontWeight = FontWeight.Bold,
+                    color = Color.White,
+                    textAlign = TextAlign.Center
+                )
+            }
+        }
+        if (awaitingSync) {
+            Spacer(Modifier.height(4.dp))
+            StatusBanner {
+                Text(
+                    text = "Reconnexion…",
+                    modifier = Modifier.padding(12.dp),
+                    style = MaterialTheme.typography.bodyMedium,
+                    fontWeight = FontWeight.Bold,
+                    color = Color.White,
+                    textAlign = TextAlign.Center
+                )
+            }
+        }
+    }
+}
 
 /**
  * Écran de révélation individuelle, partagé par l'hôte et les invités :
@@ -271,10 +332,8 @@ fun GuestBoardScreen(
 
             Spacer(Modifier.height(16.dp))
 
-            ScrimText(
-                text = guestStatusText(board.votePhase, hasVoted, shouldVote),
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.Bold
+            BoardStatusText(
+                text = guestStatusText(board.votePhase, hasVoted, shouldVote, board.noElimination)
             )
 
             Spacer(Modifier.height(16.dp))
@@ -286,7 +345,13 @@ fun GuestBoardScreen(
                 modifier = Modifier.weight(1f)
             ) {
                 items(orderedPlayers, key = { it.playerId }) { player ->
-                    GuestPlayerCard(player, order = rankById[player.playerId], isMe = player.playerId == myId)
+                    GuestPlayerCard(
+                        player,
+                        order = rankById[player.playerId],
+                        isMe = player.playerId == myId,
+                        hasVoted = board.votePhase != VotePhase.IDLE &&
+                            player.playerId in board.votedPlayerIds
+                    )
                 }
             }
         }
@@ -315,21 +380,34 @@ private fun shouldVote(board: BoardSnapshot, myId: Int): Boolean = when (board.v
     VotePhase.SECOND_ROUND -> myId !in board.tiedCandidates
 }
 
-private fun guestStatusText(votePhase: VotePhase, hasVoted: Boolean, shouldVote: Boolean): String = when {
+private fun guestStatusText(
+    votePhase: VotePhase,
+    hasVoted: Boolean,
+    shouldVote: Boolean,
+    noElimination: NoElimination?
+): String = when {
     hasVoted -> "Vote enregistré, en attente des autres…"
-    votePhase == VotePhase.IDLE -> "Donnez vos indices dans l'ordre, discutez… puis votez !"
+    votePhase == VotePhase.IDLE ->
+        noEliminationHint(noElimination)
+            ?: "Donnez vos indices dans l'ordre, discutez… puis votez !"
     shouldVote && votePhase == VotePhase.SECOND_ROUND -> "Égalité : re-vote pour départager."
     shouldVote -> "À toi de voter !"
     else -> "Vote en cours…"
 }
 
 @Composable
-private fun GuestPlayerCard(player: com.lemytho.app.net.PublicPlayer, order: Int?, isMe: Boolean) {
+private fun GuestPlayerCard(
+    player: com.lemytho.app.net.PublicPlayer,
+    order: Int?,
+    isMe: Boolean,
+    hasVoted: Boolean = false
+) {
     val eliminated = player.status == PlayerStatus.ELIMINATED
     val label = buildString {
         if (order != null) append("$order. ")
         append(player.pseudo)
         if (isMe) append(" (toi)")
+        if (hasVoted) append(" (a voté)")
     }
     Surface(
         modifier = Modifier.fillMaxWidth(),
@@ -341,13 +419,17 @@ private fun GuestPlayerCard(player: com.lemytho.app.net.PublicPlayer, order: Int
             modifier = Modifier.padding(16.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            Text(
-                text = label,
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.Bold,
-                color = if (eliminated) MaterialTheme.colorScheme.onSurfaceVariant
-                else MaterialTheme.colorScheme.onSurface
-            )
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                PresenceDot(connected = player.connected)
+                Spacer(Modifier.width(6.dp))
+                Text(
+                    text = label,
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold,
+                    color = if (eliminated) MaterialTheme.colorScheme.onSurfaceVariant
+                    else MaterialTheme.colorScheme.onSurface
+                )
+            }
             if (eliminated && player.role != null) {
                 Spacer(Modifier.height(4.dp))
                 Row(verticalAlignment = Alignment.CenterVertically) {
@@ -376,6 +458,7 @@ fun GuestEliminationScreen(
     isMe: Boolean,
     guestResult: ResultSnapshot?,
     guessSubmitted: Boolean,
+    myPseudo: String? = null,
     onSubmitGuess: (String) -> Unit,
     onSeeResults: () -> Unit
 ) {
@@ -429,49 +512,47 @@ fun GuestEliminationScreen(
                 hasResult = hasResult,
                 turnNumber = elimination.turnNumber
             )
-            val raiseStatus = preStepText != null || turnFollowUp != null
-
-            Box(
-                modifier = Modifier
-                    .weight(1f)
-                    .fillMaxWidth()
-            ) {
-                Column(
-                    modifier = Modifier
-                        .align(Alignment.Center)
-                        .then(
-                            if (raiseStatus) Modifier.offset(y = (-128).dp) else Modifier
-                        ),
-                    horizontalAlignment = Alignment.CenterHorizontally
-                ) {
-                    if (preStepText != null) {
-                        val verdictPill = @Composable {
-                            ScrimText(
-                                text = preStepText,
-                                style = MaterialTheme.typography.titleMedium,
-                                fontWeight = FontWeight.Bold,
-                                textAlign = TextAlign.Center
-                            )
-                        }
-                        if (guessFound || elimination.guessCorrect) {
-                            GuessWinSparkles { verdictPill() }
-                        } else {
-                            verdictPill()
-                        }
-                    }
-                    if (turnFollowUp != null) {
-                        if (preStepText != null) {
-                            Spacer(Modifier.height(8.dp))
-                        }
+            val verdictPill = @Composable {
+                if (preStepText != null) {
+                    val pill = @Composable {
                         ScrimText(
-                            text = turnFollowUp,
+                            text = preStepText,
                             style = MaterialTheme.typography.titleMedium,
                             fontWeight = FontWeight.Bold,
                             textAlign = TextAlign.Center
                         )
                     }
-
-                    if (canTypeGuess) {
+                    if (guessFound || elimination.guessCorrect) {
+                        GuessWinSparkles { pill() }
+                    } else {
+                        pill()
+                    }
+                }
+            }
+            BoxWithConstraints(
+                modifier = Modifier
+                    .weight(1f)
+                    .fillMaxWidth()
+                    .then(if (canTypeGuess) Modifier.imePadding() else Modifier)
+            ) {
+                if (canTypeGuess) {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .verticalScroll(rememberScrollState()),
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        if (elimination.votes.isNotEmpty()) {
+                            VoteRevealList(
+                                votes = elimination.votes,
+                                eliminatedPseudo = elimination.pseudo,
+                                eliminatedRole = elimination.role,
+                                myPseudo = myPseudo,
+                                maxHeight = 120.dp
+                            )
+                            Spacer(Modifier.height(16.dp))
+                        }
+                        verdictPill()
                         Spacer(Modifier.height(16.dp))
                         Surface(
                             shape = RoundedCornerShape(16.dp),
@@ -486,21 +567,41 @@ fun GuestEliminationScreen(
                             }
                         }
                     }
+                } else if (elimination.votes.isNotEmpty()) {
+                    VoteRevealList(
+                        votes = elimination.votes,
+                        eliminatedPseudo = elimination.pseudo,
+                        eliminatedRole = elimination.role,
+                        myPseudo = myPseudo,
+                        maxHeight = maxHeight * 0.85f,
+                        modifier = Modifier.align(Alignment.Center)
+                    )
                 }
-                ShowVotesControl(
-                    votes = elimination.votes,
-                    modifier = Modifier.align(Alignment.Center)
-                )
             }
 
-            if (!canTypeGuess && !waitingForUnknownGuess) {
-                Spacer(Modifier.height(16.dp))
-                ScrimText(
-                    text = nextStepText(hasResult),
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold,
-                    textAlign = TextAlign.Center
-                )
+            if (!canTypeGuess) {
+                if (preStepText != null) {
+                    Spacer(Modifier.height(16.dp))
+                    verdictPill()
+                }
+                if (turnFollowUp != null) {
+                    Spacer(Modifier.height(if (preStepText != null) 8.dp else 16.dp))
+                    ScrimText(
+                        text = turnFollowUp,
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold,
+                        textAlign = TextAlign.Center
+                    )
+                }
+                if (!waitingForUnknownGuess) {
+                    Spacer(Modifier.height(16.dp))
+                    ScrimText(
+                        text = nextStepText(hasResult),
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold,
+                        textAlign = TextAlign.Center
+                    )
+                }
             }
 
             if (hasResult) {
@@ -754,14 +855,11 @@ fun GuestResultScreen(
 
 @Composable
 private fun RankBadge(rank: Int) {
-    if (rank !in 1..3) {
-        Spacer(Modifier.width(28.dp))
-        return
-    }
     val (background, foreground) = when (rank) {
-        1 -> Color(0xFFD4AF37) to Color(0xFF3A2E00) // or
-        2 -> Color(0xFFB8B8B8) to Color(0xFF2A2A2A) // argent
-        else -> Color(0xFFCD7F32) to Color(0xFF331C00) // bronze
+        1 -> Color(0xFFD4AF37) to Color(0xFF3A2E00)
+        2 -> Color(0xFFB8B8B8) to Color(0xFF2A2A2A)
+        3 -> Color(0xFFCD7F32) to Color(0xFF331C00)
+        else -> Color(0xFF3A4150) to Color.White
     }
     Box(
         modifier = Modifier

@@ -4,7 +4,9 @@
 import { io, type Socket } from "socket.io-client";
 import {
   LOBBY_CLOSED,
+  LOBBY_HEARTBEAT,
   LOBBY_JOIN,
+  LOBBY_LEAVE,
   LOBBY_READY,
   LOBBY_UPDATE,
   GAME_START,
@@ -15,6 +17,8 @@ import {
   GAME_RESULT,
   GAME_REVEAL_ACK,
   GAME_CANCELLED,
+  GAME_SYNC,
+  PLAYER_PRESENCE,
   parseMembers,
   type LobbyMember,
 } from "./protocol";
@@ -54,21 +58,31 @@ const GAME_EVENTS = [
   GAME_RESULT,
   GAME_REVEAL_ACK,
   GAME_CANCELLED,
+  GAME_SYNC,
+  PLAYER_PRESENCE,
 ];
 
 export class GuestSocket {
   private socket: Socket | null = null;
+  private connectedUrl: string | null = null;
 
   constructor(private readonly listeners: Listener) {}
 
-  /** Ouvre une connexion vers [url] (ex. "https://lemytho.duckdns.org"). */
-  connect(url: string): void {
+  /** Ouvre une connexion vers [url] et attend CONNECT. */
+  connect(url: string): Promise<boolean> {
+    const current = this.socket;
+    if (current && this.connectedUrl === url) {
+      if (current.connected) return Promise.resolve(true);
+      current.connect();
+      return this.waitConnected(current);
+    }
     this.disconnect();
     this.listeners.onStatus("connecting");
+    this.connectedUrl = url;
 
     const socket = io(url, {
       reconnection: true,
-      reconnectionAttempts: 10,
+      reconnectionAttempts: Infinity,
       reconnectionDelay: 1000,
       timeout: 10000,
     });
@@ -93,6 +107,8 @@ export class GuestSocket {
     }
 
     this.socket = socket;
+    socket.connect();
+    return this.waitConnected(socket);
   }
 
   disconnect(): void {
@@ -101,6 +117,7 @@ export class GuestSocket {
       this.socket.disconnect();
       this.socket = null;
     }
+    this.connectedUrl = null;
     this.listeners.onStatus("disconnected");
   }
 
@@ -111,10 +128,41 @@ export class GuestSocket {
     }
   }
 
+  isConnected(): boolean {
+    return this.socket?.connected === true;
+  }
+
+  heartbeat(): Promise<boolean> {
+    const socket = this.socket;
+    if (!socket?.connected) return Promise.resolve(false);
+    return new Promise((resolve) => {
+      const timer = setTimeout(() => resolve(false), 2000);
+      socket.emit(LOBBY_HEARTBEAT, {}, () => {
+        clearTimeout(timer);
+        resolve(true);
+      });
+    });
+  }
+
+  leave(): Promise<void> {
+    const socket = this.socket;
+    if (!socket?.connected) return Promise.resolve();
+    return new Promise((resolve) => {
+      const timer = setTimeout(() => resolve(), 2000);
+      socket.emit(LOBBY_LEAVE, {}, () => {
+        clearTimeout(timer);
+        resolve();
+      });
+    });
+  }
+
   /** Rejoint un salon et attend la confirmation du serveur. */
   joinLobby(code: string, pseudo: string, clientId?: string): Promise<JoinAck> {
     const socket = this.socket;
     if (!socket) {
+      return Promise.resolve({ ok: false, error: "NOT_CONNECTED", message: "Non connecté au serveur" });
+    }
+    if (!socket.connected) {
       return Promise.resolve({ ok: false, error: "NOT_CONNECTED", message: "Non connecté au serveur" });
     }
     return new Promise((resolve) => {
@@ -161,5 +209,20 @@ export class GuestSocket {
     if (this.socket?.connected) {
       this.socket.emit("relay:toHost", { event, data });
     }
+  }
+
+  private waitConnected(socket: Socket): Promise<boolean> {
+    if (socket.connected) return Promise.resolve(true);
+    return new Promise((resolve) => {
+      const timer = setTimeout(() => {
+        socket.off("connect", onOk);
+        resolve(socket.connected);
+      }, 15000);
+      const onOk = () => {
+        clearTimeout(timer);
+        resolve(true);
+      };
+      socket.once("connect", onOk);
+    });
   }
 }

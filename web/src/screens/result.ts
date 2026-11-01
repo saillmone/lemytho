@@ -1,9 +1,9 @@
 // Résultat final vu par un invité (miroir de GuestResultScreen).
 
-import { confirmDialog, h, scrim } from "../ui";
+import { confirmDialog, h, roleGlyph, scrim, sessionBanners } from "../ui";
 import type { AppState } from "../state";
 import type { Actions } from "../actions";
-import { roleCssClass, type ResultSnapshot, type Victory } from "../protocol";
+import { type ResultSnapshot, type Victory } from "../protocol";
 
 function score(result: ResultSnapshot, playerId: number): number {
   return result.totalScores[String(playerId)] ?? 0;
@@ -91,8 +91,8 @@ export function renderResult(state: AppState, actions: Actions): HTMLElement {
     return h(
       "div",
       { class: "score-row" },
-      h("span", { class: rankClass(index + 1) }, index < 3 ? `${index + 1}` : ""),
-      h("span", { class: `role-dot ${roleCssClass(player.role)}` }),
+      h("span", { class: rankClass(index + 1) }, `${index + 1}`),
+      roleGlyph(player.role),
       h("span", { class: "pseudo" }, player.pseudo),
       h("span", {}, points > 0 ? `+${points}` : "+0"),
     );
@@ -127,6 +127,7 @@ export function renderResult(state: AppState, actions: Actions): HTMLElement {
       "div",
       { class: "screen-inner" },
       h("h1", { class: "center" }, scrim(victoryTitle(result.victory, result.players))),
+      sessionBanners(state),
       h("div", { class: "spacer" }),
       h("div", { class: "center" }, scrim(victorySubtitle(result.victory, result.players, state.unknownGuessCorrect))),
       h("div", { class: "spacer-lg" }),

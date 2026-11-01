@@ -113,7 +113,8 @@ PORT=3000 PUBLIC_DIR=../web/dist node dist/index.js
 | --- | --- | --- |
 | `PORT` | `3000` | Port d'écoute |
 | `PUBLIC_DIR` | `../web/dist` | Dossier des fichiers statiques (client web + APK) |
-| `REJOIN_GRACE_MS` | `600000` | Délai (ms) pendant lequel un invité web déconnecté peut se reconnecter sans perdre sa place |
+| `REJOIN_GRACE_MS` | `1800000` | Délai (ms) pendant lequel un invité hors ligne **hors manche** peut se reconnecter sans perdre sa place (30 min) |
+| `HOST_GRACE_MS` | `600000` | Délai (ms) avant fermeture du salon si l'hôte reste hors ligne (10 min, même en manche) |
 
 ### Pointer l'app vers ton serveur
 

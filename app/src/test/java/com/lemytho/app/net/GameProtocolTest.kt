@@ -4,6 +4,7 @@ import com.lemytho.app.data.model.Player
 import com.lemytho.app.data.model.PlayerStatus
 import com.lemytho.app.data.model.Role
 import com.lemytho.app.engine.Victory
+import com.lemytho.app.ui.NoElimination
 import com.lemytho.app.ui.VotePhase
 import com.lemytho.app.ui.VoteReveal
 import org.junit.Assert.assertEquals
@@ -250,6 +251,178 @@ class GameProtocolTest {
         val result = GameProtocol.parseResult(payload)
         assertEquals(Victory.Citizen, result.victory)
         assertEquals(mapOf(1 to 3), result.totalScores)
+    }
+
+    @Test
+    fun `le plateau public expose connected sans fuite de mot`() {
+        val payload = GameProtocol.boardPayload(
+            players = players,
+            clueOrder = listOf(1, 2, 3),
+            roundNumber = 1,
+            turnNumber = 1,
+            category = "Nourriture",
+            votePhase = VotePhase.IDLE,
+            currentVoterId = null,
+            tiedCandidates = emptySet(),
+            offlinePlayerIds = setOf(2)
+        )
+        val board = GameProtocol.parseBoard(payload)
+        assertTrue(board.players[0].connected)
+        assertFalse(board.players[1].connected)
+        assertTrue(board.players[2].connected)
+        for (i in 0 until payload.getJSONArray("players").length()) {
+            assertFalse(payload.getJSONArray("players").getJSONObject(i).has("word"))
+        }
+    }
+
+    @Test
+    fun `game sync participant n'expose pas les mots des autres`() {
+        val board = GameProtocol.boardPayload(
+            players = players,
+            clueOrder = listOf(1, 2, 3),
+            roundNumber = 1,
+            turnNumber = 1,
+            category = "Nourriture",
+            votePhase = VotePhase.IDLE,
+            currentVoterId = null,
+            tiedCandidates = emptySet()
+        )
+        val payload = GameProtocol.syncPayload(
+            inRound = true,
+            participating = true,
+            phase = Protocol.PHASE_CLUE,
+            privateRole = Role.CITIZEN,
+            privateWord = "Pizza",
+            board = board
+        )
+        val sync = GameProtocol.parseSync(payload)
+        assertTrue(sync.participating)
+        assertEquals(Role.CITIZEN, sync.privateRole)
+        assertEquals("Pizza", sync.privateWord)
+        assertEquals(Protocol.PHASE_CLUE, sync.phase)
+        val boardPlayers = payload.getJSONObject("board").getJSONArray("players")
+        for (i in 0 until boardPlayers.length()) {
+            assertFalse(boardPlayers.getJSONObject(i).has("word"))
+            assertFalse(boardPlayers.getJSONObject(i).has("assignedWord"))
+        }
+    }
+
+    @Test
+    fun `game sync spectateur n'inclut pas private`() {
+        val payload = GameProtocol.syncPayload(
+            inRound = true,
+            participating = false,
+            phase = Protocol.PHASE_VOTE,
+            privateRole = Role.IMPOSTOR,
+            privateWord = "Burger"
+        )
+        val sync = GameProtocol.parseSync(payload)
+        assertTrue(sync.inRound)
+        assertFalse(sync.participating)
+        assertNull(sync.privateRole)
+        assertNull(sync.privateWord)
+        assertTrue(payload.isNull("private"))
+    }
+
+    @Test
+    fun `game sync conserve pendingUnknownGuess et elimination playerId`() {
+        val elimination = GameProtocol.eliminationPayload(3, "Carla", Role.UNKNOWN, 2)
+        val payload = GameProtocol.syncPayload(
+            inRound = true,
+            participating = true,
+            phase = Protocol.PHASE_ELIMINATION,
+            privateRole = Role.UNKNOWN,
+            privateWord = "",
+            elimination = elimination,
+            pendingUnknownGuess = true
+        )
+        val sync = GameProtocol.parseSync(payload)
+        assertEquals(Protocol.PHASE_ELIMINATION, sync.phase)
+        assertTrue(sync.pendingUnknownGuess)
+        assertEquals(3, sync.elimination?.playerId)
+        assertEquals(Role.UNKNOWN, sync.elimination?.role)
+    }
+
+    @Test
+    fun `game start expose les playerIds sans secrets`() {
+        val payload = GameProtocol.startPayload("Nourriture", listOf(1, 2, 4))
+        assertEquals("Nourriture", payload.getString("category"))
+        val ids = GameProtocol.parseStartPlayerIds(payload)
+        assertEquals(listOf(1, 2, 4), ids)
+        assertFalse(payload.has("word"))
+        assertFalse(payload.has("roles"))
+    }
+
+    @Test
+    fun `game cancelled transporte la raison`() {
+        val payload = GameProtocol.cancelledPayload(Protocol.CANCEL_HOST_CANCELLED)
+        assertEquals(Protocol.CANCEL_HOST_CANCELLED, GameProtocol.parseCancelledReason(payload))
+        assertEquals(
+            "Manche annulée par le Maître du Jeu",
+            GameProtocol.cancelledMessage(Protocol.CANCEL_HOST_CANCELLED)
+        )
+        assertEquals(
+            "Partie annulée : plus assez de joueurs",
+            GameProtocol.cancelledMessage(Protocol.CANCEL_NOT_ENOUGH_PLAYERS)
+        )
+        assertEquals(
+            "La manche a été perdue (l'appli a été fermée)",
+            GameProtocol.cancelledMessage(Protocol.CANCEL_ROUND_LOST)
+        )
+        assertEquals("Partie annulée", GameProtocol.cancelledMessage(null))
+        assertNull(GameProtocol.parseCancelledReason(org.json.JSONObject()))
+    }
+
+    @Test
+    fun `le plateau public expose votedPlayerIds sans cibles`() {
+        val payload = GameProtocol.boardPayload(
+            players = players,
+            clueOrder = listOf(1, 2, 3),
+            roundNumber = 1,
+            turnNumber = 1,
+            category = "Nourriture",
+            votePhase = VotePhase.VOTING,
+            currentVoterId = null,
+            tiedCandidates = emptySet(),
+            votedPlayerIds = listOf(1, 3)
+        )
+        assertFalse(payload.has("votes"))
+        assertFalse(payload.has("targetId"))
+        val board = GameProtocol.parseBoard(payload)
+        assertEquals(listOf(1, 3), board.votedPlayerIds)
+        assertNull(board.noElimination)
+        assertFalse(payload.has("noElimination"))
+        for (i in 0 until payload.getJSONArray("players").length()) {
+            val p = payload.getJSONArray("players").getJSONObject(i)
+            assertFalse(p.has("vote"))
+            assertFalse(p.has("targetId"))
+            assertFalse(p.has("word"))
+        }
+    }
+
+    @Test
+    fun `aller-retour noElimination TIE`() {
+        val payload = GameProtocol.boardPayload(
+            players = players,
+            clueOrder = listOf(1, 2, 3),
+            roundNumber = 1,
+            turnNumber = 2,
+            category = "Nourriture",
+            votePhase = VotePhase.IDLE,
+            currentVoterId = null,
+            tiedCandidates = emptySet(),
+            noElimination = NoElimination.TIE
+        )
+        assertEquals("TIE", payload.getString("noElimination"))
+        val board = GameProtocol.parseBoard(payload)
+        assertEquals(NoElimination.TIE, board.noElimination)
+    }
+
+    @Test
+    fun `noElimination inconnu est ignore`() {
+        val payload = boardPayload()
+        payload.put("noElimination", "UNKNOWN")
+        assertNull(GameProtocol.parseBoard(payload).noElimination)
     }
 
     private fun boardPayload() = GameProtocol.boardPayload(

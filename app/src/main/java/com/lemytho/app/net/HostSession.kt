@@ -3,6 +3,7 @@ package com.lemytho.app.net
 import com.lemytho.app.data.model.Player
 import com.lemytho.app.data.model.Role
 import com.lemytho.app.engine.Victory
+import com.lemytho.app.ui.NoElimination
 import com.lemytho.app.ui.VotePhase
 import com.lemytho.app.ui.VoteReveal
 
@@ -15,8 +16,11 @@ import com.lemytho.app.ui.VoteReveal
  */
 class HostSession(private val connectionManager: ConnectionManager) {
 
-    fun sendStart(category: String?) {
-        connectionManager.broadcast(Protocol.EVENT_GAME_START, GameProtocol.startPayload(category))
+    fun sendStart(category: String?, playerIds: List<Int> = emptyList()) {
+        connectionManager.broadcast(
+            Protocol.EVENT_GAME_START,
+            GameProtocol.startPayload(category, playerIds)
+        )
     }
 
     fun sendPrivate(playerId: Int, role: Role, word: String) {
@@ -43,15 +47,23 @@ class HostSession(private val connectionManager: ConnectionManager) {
         category: String?,
         votePhase: VotePhase,
         currentVoterId: Int?,
-        tiedCandidates: Set<Int>
+        tiedCandidates: Set<Int>,
+        offlinePlayerIds: Set<Int> = emptySet(),
+        votedPlayerIds: List<Int> = emptyList(),
+        noElimination: NoElimination? = null
     ) {
         connectionManager.broadcast(
             Protocol.EVENT_GAME_BOARD,
             GameProtocol.boardPayload(
                 players, clueOrder, roundNumber, turnNumber, category,
-                votePhase, currentVoterId, tiedCandidates
+                votePhase, currentVoterId, tiedCandidates, offlinePlayerIds, votedPlayerIds,
+                noElimination
             )
         )
+    }
+
+    fun sendSync(playerId: Int, payload: org.json.JSONObject) {
+        connectionManager.sendToPlayer(playerId, Protocol.EVENT_GAME_SYNC, payload)
     }
 
     fun sendElimination(
@@ -79,8 +91,8 @@ class HostSession(private val connectionManager: ConnectionManager) {
         )
     }
 
-    /** Annule la partie et renvoie les invités au salon (plus assez de joueurs). */
-    fun sendCancelled() {
-        connectionManager.broadcast(Protocol.EVENT_GAME_CANCELLED, org.json.JSONObject())
+    /** Annule la manche et renvoie les invités au salon. */
+    fun sendCancelled(reason: String) {
+        connectionManager.broadcast(Protocol.EVENT_GAME_CANCELLED, GameProtocol.cancelledPayload(reason))
     }
 }

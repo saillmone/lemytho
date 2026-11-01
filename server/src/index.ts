@@ -5,13 +5,10 @@ import { createStaticHandler } from "./static.js";
 
 const PORT = Number(process.env.PORT ?? 3000);
 
-// Dossier des fichiers statiques (client web + APK). En dev : ../web/dist.
 const PUBLIC_DIR = process.env.PUBLIC_DIR ?? "../web/dist";
 const staticHandler = createStaticHandler(PUBLIC_DIR);
 
 const httpServer = createServer((req, res) => {
-  // Les requêtes de polling/websocket de Socket.IO sont gérées par le moteur
-  // intégré : on les laisse passer sans écrire (sinon on avale le handshake).
   if ((req.url ?? "").startsWith("/socket.io/")) {
     return;
   }
@@ -19,32 +16,33 @@ const httpServer = createServer((req, res) => {
 });
 
 const io = new Server(httpServer, {
-  // Clients mobiles natifs : pas d'origine navigateur à restreindre.
   cors: { origin: "*" },
 });
 
 const registry = new LobbyRegistry();
 
-// Délai pendant lequel un invité web (identifié par clientId) peut se reconnecter
-// après une déconnexion brève (verrouillage d'écran, onglet suspendu, rechargement)
-// sans être retiré du salon ni perdre son playerId.
-// 10 min par défaut : un écran peut rester verrouillé pendant un long débat.
-// Surchargeable via la variable d'environnement REJOIN_GRACE_MS (en millisecondes).
-const REJOIN_GRACE_MS = Number(process.env.REJOIN_GRACE_MS) || 10 * 60 * 1000;
-const pendingRemoval = new Map<string, ReturnType<typeof setTimeout>>();
+/** Grâce invité hors manche (écran noir). 30 min par défaut. */
+const REJOIN_GRACE_MS = Number(process.env.REJOIN_GRACE_MS) || 30 * 60 * 1000;
+/** Grâce hôte (y compris en manche). 10 min par défaut. */
+const HOST_GRACE_MS = Number(process.env.HOST_GRACE_MS) || 10 * 60 * 1000;
 
-/** Nettoie une chaîne utilisateur (pseudo, code) en entrée. */
+const pendingGuestRemoval = new Map<string, ReturnType<typeof setTimeout>>();
+/** Timers de grâce hôte, indexés par code de salon. */
+const pendingHostClose = new Map<string, ReturnType<typeof setTimeout>>();
+
 function clean(value: unknown, maxLength: number): string {
   if (typeof value !== "string") return "";
   return value.trim().slice(0, maxLength);
 }
 
-/** Code de salon normalisé (majuscules, sans espaces). */
 function normalizeCode(value: unknown): string {
   return clean(value, 8).toUpperCase().replace(/[^A-Z0-9]/g, "");
 }
 
-/** Quitte la room Socket.IO précédente de la socket (évite les adhésions fantômes). */
+function readClientId(value: unknown): string | undefined {
+  return typeof value === "string" && value.length > 0 ? value.slice(0, 64) : undefined;
+}
+
 function leavePreviousRoom(socket: Socket): void {
   const previousCode = socket.data.code;
   if (typeof previousCode === "string") {
@@ -52,64 +50,156 @@ function leavePreviousRoom(socket: Socket): void {
   }
 }
 
-/** Vrai si [value] est une fonction (guard pour les callbacks ack). */
 function isFn(value: unknown): value is (...args: unknown[]) => void {
   return typeof value === "function";
 }
 
+function clearGuestTimer(clientId: string | undefined): void {
+  if (!clientId) return;
+  const timer = pendingGuestRemoval.get(clientId);
+  if (timer) {
+    clearTimeout(timer);
+    pendingGuestRemoval.delete(clientId);
+  }
+}
+
+function clearHostTimer(code: string | undefined): void {
+  if (!code) return;
+  const timer = pendingHostClose.get(code);
+  if (timer) {
+    clearTimeout(timer);
+    pendingHostClose.delete(code);
+  }
+}
+
+function disconnectReplaced(oldSocketId: string | undefined): void {
+  if (!oldSocketId) return;
+  const oldSocket = io.sockets.sockets.get(oldSocketId);
+  if (!oldSocket) return;
+  oldSocket.data.replaced = true;
+  oldSocket.disconnect(true);
+}
+
+function bindSocketToRoom(socket: Socket, code: string, playerId: number): void {
+  leavePreviousRoom(socket);
+  socket.join(code);
+  socket.data.code = code;
+  socket.data.playerId = playerId;
+}
+
+function emitPresence(code: string, playerId: number, connected: boolean, members: PublicMember[]): void {
+  io.to(code).emit("player:presence", { playerId, connected });
+  io.to(code).emit("lobby:update", { members });
+}
+
+function scheduleGuestRemoval(clientId: string): void {
+  clearGuestTimer(clientId);
+  const timer = setTimeout(() => {
+    pendingGuestRemoval.delete(clientId);
+    const result = registry.leaveByClientId(clientId);
+    if (!result) return;
+    if (result.wasHost) {
+      io.to(result.code).emit("lobby:closed", { code: result.code });
+      return;
+    }
+    if (result.playerId != null) {
+      io.to(result.code).emit("player:left", { playerId: result.playerId });
+    }
+    io.to(result.code).emit("lobby:update", { members: result.members });
+  }, REJOIN_GRACE_MS);
+  pendingGuestRemoval.set(clientId, timer);
+}
+
+function scheduleHostClose(code: string): void {
+  clearHostTimer(code);
+  const timer = setTimeout(() => {
+    pendingHostClose.delete(code);
+    const result = registry.closeIfHostParked(code);
+    if (!result) return;
+    io.to(code).emit("lobby:closed", { code });
+  }, HOST_GRACE_MS);
+  pendingHostClose.set(code, timer);
+}
+
+function restartGuestTimersAfterRound(code: string): void {
+  const room = registry.findRoomByCode(code);
+  if (!room) return;
+  for (const guest of registry.parkedGuests(room)) {
+    if (guest.clientId) scheduleGuestRemoval(guest.clientId);
+  }
+}
+
 io.on("connection", (socket) => {
-  // --- Création de salon (hôte) ---
   socket.on("lobby:create", (payload: unknown, ack?: unknown) => {
-    const pseudo = clean((payload as { pseudo?: unknown })?.pseudo, 24) || "Hôte";
-    const { code, playerId } = registry.createRoom(socket.id, pseudo);
-    socket.join(code);
-    socket.data.code = code;
-    socket.data.playerId = playerId;
-    const members: PublicMember[] = [{ playerId, pseudo, isHost: true, ready: true, connected: true }];
-    if (isFn(ack)) ack({ ok: true, code, playerId, members });
+    const data = payload as { pseudo?: unknown; clientId?: unknown };
+    const pseudo = clean(data?.pseudo, 24) || "Hôte";
+    const clientId = readClientId(data?.clientId);
+    const created = registry.createRoom(socket.id, pseudo, clientId);
+    disconnectReplaced(created.replacedSocketId);
+    clearHostTimer(created.code);
+    bindSocketToRoom(socket, created.code, created.playerId);
+    if (isFn(ack)) {
+      ack({
+        ok: true,
+        code: created.code,
+        playerId: created.playerId,
+        members: created.members,
+        resumed: created.resumed,
+        inRound: created.inRound,
+      });
+    }
+    if (created.resumed) {
+      emitPresence(created.code, 1, true, created.members);
+    }
   });
 
-  // --- Adhésion d'un invité ---
   socket.on("lobby:join", (payload: unknown, ack?: unknown) => {
     const data = payload as { code?: unknown; pseudo?: unknown; clientId?: unknown };
     const code = normalizeCode(data?.code);
     const pseudo = clean(data?.pseudo, 24) || "Joueur";
-    const clientId = typeof data?.clientId === "string" ? data.clientId.slice(0, 64) : undefined;
+    const clientId = readClientId(data?.clientId);
     try {
-      // Reprise après déconnexion brève : si un membre porte déjà ce clientId dans
-      // le salon (socket déconnectée), on ré-associe la nouvelle socket sans recréer
-      // de membre, ce qui préserve le playerId.
-      if (clientId) {
-        const rejoin = registry.rejoinRoom(code, clientId, socket.id);
-        if (rejoin) {
-          const timer = pendingRemoval.get(clientId);
-          if (timer) {
-            clearTimeout(timer);
-            pendingRemoval.delete(clientId);
-          }
-          leavePreviousRoom(socket);
-          socket.join(code);
-          socket.data.code = code;
-          socket.data.playerId = rejoin.playerId;
-          if (isFn(ack)) ack({ ok: true, code, playerId: rejoin.playerId, members: rejoin.members });
-          socket.to(code).emit("lobby:update", { members: rejoin.members });
-          return;
-        }
+      const claimed = registry.claimSeat(code, pseudo, socket.id, clientId);
+      disconnectReplaced(claimed.replacedSocketId);
+      if (clientId) clearGuestTimer(clientId);
+      bindSocketToRoom(socket, code, claimed.playerId);
+      if (isFn(ack)) ack({ ok: true, code, playerId: claimed.playerId, members: claimed.members });
+      if (claimed.resumed) {
+        emitPresence(code, claimed.playerId, true, claimed.members);
+      } else {
+        socket.to(code).emit("lobby:update", { members: claimed.members });
       }
-      const { playerId, members } = registry.joinRoom(code, pseudo, socket.id, clientId);
-      leavePreviousRoom(socket);
-      socket.join(code);
-      socket.data.code = code;
-      socket.data.playerId = playerId;
-      if (isFn(ack)) ack({ ok: true, code, playerId, members });
-      socket.to(code).emit("lobby:update", { members });
     } catch (err) {
       const error = err as LobbyError;
       if (isFn(ack)) ack({ ok: false, error: error.code, message: error.message });
     }
   });
 
-  // --- Statut « prêt » d'un membre ---
+  socket.on("lobby:leave", (_payload: unknown, ack?: unknown) => {
+    if (socket.data.replaced) {
+      if (isFn(ack)) ack({ ok: true });
+      return;
+    }
+    const result = registry.leave(socket.id);
+    socket.data.replaced = true;
+    leavePreviousRoom(socket);
+    socket.data.code = undefined;
+    socket.data.playerId = undefined;
+    if (result) {
+      if (result.clientId) clearGuestTimer(result.clientId);
+      if (result.wasHost) clearHostTimer(result.code);
+      if (result.wasHost) {
+        io.to(result.code).emit("lobby:closed", { code: result.code });
+      } else {
+        if (result.playerId != null) {
+          io.to(result.code).emit("player:left", { playerId: result.playerId });
+        }
+        io.to(result.code).emit("lobby:update", { members: result.members });
+      }
+    }
+    if (isFn(ack)) ack({ ok: true });
+  });
+
   socket.on("lobby:ready", (payload: unknown, ack?: unknown) => {
     const ready = (payload as { ready?: unknown })?.ready === true;
     const room = registry.findRoomBySocket(socket.id);
@@ -120,109 +210,91 @@ io.on("connection", (socket) => {
     io.to(result.code).emit("lobby:update", { members: result.members });
   });
 
-  // --- Début de partie : remet tous les membres en « non prêt » ---
   socket.on("lobby:start", () => {
     const room = registry.findRoomBySocket(socket.id);
     if (!room || !registry.isHost(socket.id)) return;
     registry.resetReady(room);
+    registry.setInRound(socket.id, true);
+    for (const guest of registry.parkedGuests(room)) {
+      clearGuestTimer(guest.clientId);
+    }
     io.to(room.code).emit("lobby:update", { members: registry.publicMembers(room) });
   });
 
-  // --- Relais : invité -> hôte ---
-  socket.on(
-    "relay:toHost",
-    (payload: unknown) => {
-      const { event, data: relayData } = payload as { event?: unknown; data?: unknown };
-      const room = registry.findRoomBySocket(socket.id);
-      if (!room || typeof event !== "string") return;
-      io.to(room.hostSocketId).emit(event, relayData);
-    },
-  );
-
-  // --- Relais : hôte -> invité précis ---
-  socket.on(
-    "relay:toPlayer",
-    (payload: unknown) => {
-      if (!registry.isHost(socket.id)) return;
-      const { playerId, event, data: relayData } = payload as {
-        playerId?: unknown;
-        event?: unknown;
-        data?: unknown;
-      };
-      const room = registry.findRoomBySocket(socket.id);
-      if (!room || typeof event !== "string" || typeof playerId !== "number") return;
-      const targetSocketId = registry.socketIdForPlayer(room, playerId);
-      if (targetSocketId) {
-        io.to(targetSocketId).emit(event, relayData);
-      }
-    },
-  );
-
-  // --- Relais : hôte -> tous les invités (sauf l'hôte) ---
-  socket.on(
-    "relay:broadcast",
-    (payload: unknown) => {
-      if (!registry.isHost(socket.id)) return;
-      const { event, data: relayData } = payload as { event?: unknown; data?: unknown };
-      const room = registry.findRoomBySocket(socket.id);
-      if (!room || typeof event !== "string") return;
-      socket.to(room.code).emit(event, relayData);
-    },
-  );
-
-  // --- Relais : hôte -> tout le salon (hôte compris) ---
-  socket.on(
-    "relay:toAll",
-    (payload: unknown) => {
-      if (!registry.isHost(socket.id)) return;
-      const { event, data: relayData } = payload as { event?: unknown; data?: unknown };
-      const room = registry.findRoomBySocket(socket.id);
-      if (!room || typeof event !== "string") return;
-      io.to(room.code).emit(event, relayData);
-    },
-  );
-
-  // --- Déconnexion ---
-  socket.on("disconnect", () => {
+  socket.on("lobby:roundEnded", () => {
     const room = registry.findRoomBySocket(socket.id);
-    if (!room) return;
-    const member = room.members.find((m) => m.socketId === socket.id);
-    if (!member) return;
+    if (!room || !registry.isHost(socket.id)) return;
+    registry.setInRound(socket.id, false);
+    restartGuestTimersAfterRound(room.code);
+  });
 
-    // Déconnexion de l'hôte : fermeture du salon.
-    if (room.hostSocketId === socket.id) {
-      const result = registry.leave(socket.id);
-      if (!result) return;
-      io.to(result.code).emit("lobby:closed", { code: result.code });
+  socket.on("lobby:heartbeat", (_payload: unknown, ack?: unknown) => {
+    if (isFn(ack)) ack({ ok: true });
+  });
+
+  socket.on("relay:toHost", (payload: unknown) => {
+    const { event, data: relayData } = payload as { event?: unknown; data?: unknown };
+    const room = registry.findRoomBySocket(socket.id);
+    if (!room || typeof event !== "string") return;
+    if (!room.hostSocketId) return;
+    io.to(room.hostSocketId).emit(event, relayData);
+  });
+
+  socket.on("relay:toPlayer", (payload: unknown) => {
+    if (!registry.isHost(socket.id)) return;
+    const { playerId, event, data: relayData } = payload as {
+      playerId?: unknown;
+      event?: unknown;
+      data?: unknown;
+    };
+    const room = registry.findRoomBySocket(socket.id);
+    if (!room || typeof event !== "string" || typeof playerId !== "number") return;
+    const targetSocketId = registry.socketIdForPlayer(room, playerId);
+    if (targetSocketId) {
+      io.to(targetSocketId).emit(event, relayData);
+    }
+  });
+
+  socket.on("relay:broadcast", (payload: unknown) => {
+    if (!registry.isHost(socket.id)) return;
+    const { event, data: relayData } = payload as { event?: unknown; data?: unknown };
+    const room = registry.findRoomBySocket(socket.id);
+    if (!room || typeof event !== "string") return;
+    socket.to(room.code).emit(event, relayData);
+  });
+
+  socket.on("relay:toAll", (payload: unknown) => {
+    if (!registry.isHost(socket.id)) return;
+    const { event, data: relayData } = payload as { event?: unknown; data?: unknown };
+    const room = registry.findRoomBySocket(socket.id);
+    if (!room || typeof event !== "string") return;
+    io.to(room.code).emit(event, relayData);
+  });
+
+  socket.on("disconnect", () => {
+    if (socket.data.replaced) return;
+    const parked = registry.park(socket.id);
+    if (!parked) return;
+
+    emitPresence(parked.code, parked.playerId, false, parked.members);
+
+    if (parked.wasHost) {
+      scheduleHostClose(parked.code);
       return;
     }
 
-    // Prévenir l'hôte IMMÉDIATEMENT. S'il n'y a pas de manche en cours (lobby),
-    // il ignore l'événement ; sinon il retire/élimine le joueur (option A), ou
-    // annule la partie si le nombre de joueurs tombe sous 3.
-    io.to(room.hostSocketId).emit("player:disconnected", { playerId: member.playerId });
-
-    // Invité web (clientId) : déconnexion brève possible (rechargement de page,
-    // verrouillage d'écran). On conserve le membre (déconnecté) le temps d'une
-    // éventuelle reprise : il reste au salon et pourra se remettre prêt pour la
-    // manche suivante.
-    if (member.clientId) {
-      member.socketId = "";
-      io.to(room.code).emit("lobby:update", { members: registry.publicMembers(room) });
-      const timer = setTimeout(() => {
-        pendingRemoval.delete(member.clientId!);
-        const result = registry.leaveByClientId(member.clientId!);
-        if (!result) return;
-        io.to(result.code).emit("lobby:update", { members: result.members });
-      }, REJOIN_GRACE_MS);
-      pendingRemoval.set(member.clientId, timer);
+    const room = registry.findRoomByCode(parked.code);
+    if (room?.inRound) return;
+    if (parked.clientId) {
+      scheduleGuestRemoval(parked.clientId);
       return;
     }
-
-    // Invité Android (sans clientId) : départ immédiat et définitif.
-    const result = registry.leave(socket.id);
-    if (!result) return;
-    io.to(result.code).emit("lobby:update", { members: result.members });
+    const dropped = registry.leaveParkedPlayer(parked.code, parked.playerId);
+    if (!dropped) return;
+    if (dropped.playerId != null) {
+      io.to(dropped.code).emit("player:left", { playerId: dropped.playerId });
+    }
+    io.to(dropped.code).emit("lobby:update", { members: dropped.members });
   });
 });
 
@@ -230,8 +302,6 @@ httpServer.listen(PORT, () => {
   console.log(`Le Mytho relay server listening on port ${PORT}`);
 });
 
-// Fermeture propre (reload tsx watch / arrêt manuel) : libère le port avant
-// de relancer, évitant les erreurs EADDRINUSE lors des redémarrages à chaud.
 function shutdown(): void {
   io.close(() => process.exit(0));
   setTimeout(() => process.exit(0), 500).unref();

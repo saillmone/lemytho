@@ -20,7 +20,7 @@ if (keystorePropertiesFile.exists()) {
 val serverUrl = (project.findProperty("lemytho.serverUrl") as String?) ?: "https://lemytho.duckdns.org"
 
 // Version de l'application, réutilisée pour le nom de l'APK généré.
-val appVersion = "0.1.2"
+val appVersion = "0.2.4"
 
 android {
     namespace = "com.lemytho.app"
@@ -41,7 +41,7 @@ android {
         applicationId = "com.lemytho.app"
         minSdk = 24
         targetSdk = 35
-        versionCode = 3
+        versionCode = 8
         versionName = appVersion
         buildConfigField("String", "SERVER_URL", "\"$serverUrl\"")
     }
@@ -99,6 +99,7 @@ dependencies {
     // AndroidX de base
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)
+    implementation(libs.androidx.lifecycle.process)
     implementation(libs.androidx.lifecycle.viewmodel.compose)
     implementation(libs.androidx.lifecycle.runtime.compose)
     implementation(libs.androidx.activity.compose)

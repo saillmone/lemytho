@@ -1,6 +1,6 @@
 // Écran d'attente dans le salon (miroir de WaitingScreen), réservé à l'invité.
 
-import { confirmDialog, h, scrim } from "../ui";
+import { confirmDialog, h, scrim, sessionBanners } from "../ui";
 import type { AppState } from "../state";
 import type { Actions } from "../actions";
 import type { LobbyMember } from "../protocol";
@@ -28,28 +28,37 @@ function roleDistributionLabel(playerCount: number, threePlayerIsUnknown = true)
   return parts.join(" · ");
 }
 
-function memberRow(member: LobbyMember, isMe: boolean): HTMLElement {
-  // Suffixe identique à l'app : « (toi) » a priorité sur « (Maître du Jeu) ».
-  const suffix = isMe ? " (toi)" : member.isHost ? " (Maître du Jeu)" : "";
-  const disconnected = !member.connected ? " (déconnecté)" : "";
+function memberRow(
+  member: LobbyMember,
+  isMe: boolean,
+  roundPlayerIds: number[],
+): HTMLElement {
+  const inRound = roundPlayerIds.includes(member.playerId);
+  let suffix = isMe ? " (toi)" : member.isHost ? " (Maître du Jeu)" : "";
+  if (inRound && !isMe) suffix += " (en jeu)";
+  const filled = member.connected && (inRound || member.isHost || member.ready);
+  const dotClass = !member.connected ? "dot offline" : filled ? "dot online" : "dot";
   return h(
     "li",
     { class: "member" },
-    h("span", { class: `dot ${member.ready ? "ready" : ""}` }),
-    h("span", { class: "pseudo" }, `${member.pseudo}${suffix}${disconnected}`),
+    h("span", { class: dotClass }),
+    h("span", { class: "pseudo" }, `${member.pseudo}${suffix}`),
   );
 }
 
 export function renderWaiting(state: AppState, actions: Actions): HTMLElement {
-  const readyCount = state.members.filter((m) => m.ready).length;
-  const playingCount = state.members.length;
+  const spectator = state.inRound && !state.participating;
+  const readyCount = state.members.filter((m) => m.ready && m.connected).length;
+  const playingCount = state.members.filter((m) => (m.ready || m.isHost) && m.connected).length;
   const myMember = state.members.find((m) => m.playerId === state.myPlayerId);
   const myReady = myMember?.ready ?? false;
 
   const membersList = h(
     "ul",
     { class: "members" },
-    ...state.members.map((m) => memberRow(m, m.playerId === state.myPlayerId)),
+    ...state.members.map((m) =>
+      memberRow(m, m.playerId === state.myPlayerId, state.roundPlayerIds),
+    ),
   );
 
   const readyButton = h(
@@ -61,13 +70,14 @@ export function renderWaiting(state: AppState, actions: Actions): HTMLElement {
     myReady ? "Je ne suis pas prêt" : "Je suis prêt",
   );
 
-  const footer = h(
-    "div",
-    { class: "muted center" },
-    readyCount < 3
-      ? "En attente d'au moins 3 joueurs prêts…"
-      : `Répartition : ${roleLabelForLobby(playingCount)}`,
-  );
+  const footer = spectator
+    ? null
+    : scrim(
+        readyCount < 3
+          ? "En attente d'au moins 3 joueurs prêts…"
+          : `Répartition : ${roleLabelForLobby(playingCount)}`,
+        "center",
+      );
 
   const screen = h("div", { class: "screen bg-players" });
 
@@ -93,13 +103,20 @@ export function renderWaiting(state: AppState, actions: Actions): HTMLElement {
     h(
       "div",
       { class: "screen-inner" },
-      h("h1", {}, "En attente…"),
+      h("h1", {}, spectator ? "Manche en cours" : "En attente…"),
       h("div", { class: "spacer" }),
-      scrim(`Le Maître du Jeu va lancer la partie (salon ${state.lobbyCode ?? ""})`, "center"),
+      sessionBanners(state),
+      scrim(
+        spectator
+          ? "Manche en cours, tu rejoindras la suivante."
+          : `Le Maître du Jeu va lancer la partie (salon ${state.lobbyCode ?? ""})`,
+        "center",
+      ),
       h("div", { class: "spacer-lg" }),
       readyButton,
       h("div", { class: "spacer" }),
       footer,
+      errorBlock ? h("div", { class: "spacer" }) : null,
       errorBlock,
       h("div", { class: "spacer-lg" }),
       h("h2", {}, `Joueurs (${state.members.length})`),

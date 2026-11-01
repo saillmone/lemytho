@@ -1,9 +1,9 @@
 // Plateau public vu par un invité (miroir de GuestBoardScreen) + dialogue de vote.
 
-import { h, scrim } from "../ui";
+import { h, roleGlyph, scrim, sessionBanners } from "../ui";
 import type { AppState } from "../state";
 import type { Actions } from "../actions";
-import { roleCssClass, roleLabel, type BoardSnapshot, type PublicPlayer, type VotePhase } from "../protocol";
+import { roleCssClass, roleLabel, type BoardSnapshot, type PublicPlayer } from "../protocol";
 
 function shouldVote(board: BoardSnapshot, myId: number): boolean {
   switch (board.votePhase) {
@@ -16,25 +16,40 @@ function shouldVote(board: BoardSnapshot, myId: number): boolean {
   }
 }
 
-function statusText(votePhase: VotePhase, hasVoted: boolean, canVote: boolean): string {
+function statusText(board: BoardSnapshot, hasVoted: boolean, canVote: boolean): string {
   if (hasVoted) return "Vote enregistré, en attente des autres…";
-  if (votePhase === "IDLE") return "Donnez vos indices dans l'ordre, discutez… puis votez !";
-  if (canVote && votePhase === "SECOND_ROUND") return "Égalité : re-vote pour départager.";
+  if (board.votePhase === "IDLE") {
+    if (board.noElimination === "TIE") return "Égalité : personne n'est éliminé. Nouvel indice.";
+    if (board.noElimination === "NO_VOTES") return "Personne n'est éliminé (aucun vote). Nouvel indice.";
+    return "Donnez vos indices dans l'ordre, discutez… puis votez !";
+  }
+  if (canVote && board.votePhase === "SECOND_ROUND") return "Égalité : re-vote pour départager.";
   if (canVote) return "À toi de voter !";
   return "Vote en cours…";
 }
 
-function playerCard(player: PublicPlayer, order: number | undefined, isMe: boolean): HTMLElement {
+function playerCard(
+  player: PublicPlayer,
+  order: number | undefined,
+  isMe: boolean,
+  hasVoted: boolean,
+): HTMLElement {
   const eliminated = player.status === "ELIMINATED";
-  const label = `${order != null ? `${order}. ` : ""}${player.pseudo}${isMe ? " (toi)" : ""}`;
+  const voted = hasVoted ? " (a voté)" : "";
+  const label = `${order != null ? `${order}. ` : ""}${player.pseudo}${isMe ? " (toi)" : ""}${voted}`;
   const roleLine =
     eliminated && player.role
-      ? h("div", { class: `role ${roleCssClass(player.role)}` }, roleLabel(player.role))
+      ? h("div", { class: `role ${roleCssClass(player.role)}` }, roleGlyph(player.role, roleLabel(player.role)))
       : null;
   return h(
     "div",
     { class: `card ${eliminated ? "eliminated" : ""}` },
-    h("div", { class: "name" }, label),
+    h(
+      "div",
+      { class: "name" },
+      h("span", { class: player.connected === false ? "dot offline" : "dot online" }),
+      label,
+    ),
     roleLine,
   );
 }
@@ -56,7 +71,14 @@ export function renderBoard(state: AppState, actions: Actions): HTMLElement {
   const grid = h(
     "div",
     { class: "grid" },
-    ...orderedPlayers.map((p) => playerCard(p, rankById.get(p.playerId), p.playerId === myId)),
+    ...orderedPlayers.map((p) =>
+      playerCard(
+        p,
+        rankById.get(p.playerId),
+        p.playerId === myId,
+        board.votePhase !== "IDLE" && board.votedPlayerIds.includes(p.playerId),
+      ),
+    ),
   );
 
   const root = h(
@@ -66,6 +88,7 @@ export function renderBoard(state: AppState, actions: Actions): HTMLElement {
       "div",
       { class: "screen-inner" },
       h("h1", {}, scrim("Plateau de jeu")),
+      sessionBanners(state),
       h("div", { class: "spacer" }),
       h(
         "div",
@@ -73,9 +96,10 @@ export function renderBoard(state: AppState, actions: Actions): HTMLElement {
         scrim(`Manche ${board.roundNumber}`),
         scrim(`Tour ${board.turnNumber}`),
       ),
-      board.category ? h("div", { class: "spacer" }, scrim(`Catégorie : ${board.category}`)) : null,
+      board.category ? h("div", { class: "spacer" }) : null,
+      board.category ? scrim(`Catégorie : ${board.category}`) : null,
       h("div", { class: "spacer-lg" }),
-      scrim(statusText(board.votePhase, state.hasVoted, canVote)),
+      scrim(statusText(board, state.hasVoted, canVote), "board-status"),
       h("div", { class: "spacer" }),
       grid,
     ),
@@ -97,7 +121,13 @@ export function renderBoard(state: AppState, actions: Actions): HTMLElement {
         h("h2", {}, isSecondRound ? "Égalité !" : "Vote"),
         isSecondRound ? h("div", { class: "muted" }, "Re-votez pour départager les ex æquo.") : null,
         h("div", { class: "spacer" }),
-        h("div", { class: "muted" }, "Qui n'est pas un Citoyen d'après toi ?"),
+        h(
+          "div",
+          { class: "muted" },
+          "Qui n'est pas un Citoyen d'après ",
+          h("span", { class: "vote-you" }, "toi"),
+          " ?",
+        ),
         h("div", { class: "spacer" }),
         ...targets.map((t) =>
           h(

@@ -36,7 +36,9 @@ sealed class LobbyResult {
     data class Success(
         val code: String?,
         val playerId: Int,
-        val members: List<LobbyMember>
+        val members: List<LobbyMember>,
+        val resumed: Boolean = false,
+        val inRound: Boolean = false
     ) : LobbyResult()
 
     data class Failure(val error: String, val message: String) : LobbyResult()

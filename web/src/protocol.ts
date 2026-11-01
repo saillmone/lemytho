@@ -4,6 +4,7 @@
 export type Role = "CITIZEN" | "IMPOSTOR" | "UNKNOWN";
 export type PlayerStatus = "ACTIVE" | "ELIMINATED";
 export type VotePhase = "IDLE" | "VOTING" | "SECOND_ROUND";
+export type NoElimination = "TIE" | "NO_VOTES";
 export type VictoryType = "CITIZEN" | "IMPOSTOR" | "UNKNOWN" | "COMBINED" | "ONGOING";
 
 // --- Noms d'événements (serveur -> client) ---
@@ -15,6 +16,11 @@ export const GAME_ELIMINATION = "game:elimination";
 export const GAME_RESULT = "game:result";
 export const GAME_REVEAL_ACK = "game:revealAck";
 export const GAME_CANCELLED = "game:cancelled";
+export const GAME_SYNC = "game:sync";
+
+export const CANCEL_NOT_ENOUGH_PLAYERS = "not_enough_players";
+export const CANCEL_HOST_CANCELLED = "host_cancelled";
+export const CANCEL_ROUND_LOST = "round_lost";
 
 // --- Noms d'événements (client -> hôte via relay:toHost) ---
 export const PLAYER_REVEAL = "player:reveal";
@@ -22,6 +28,8 @@ export const PLAYER_VOTE = "player:vote";
 export const PLAYER_READY = "player:ready";
 /** Texte de la devinette de l'Inconnu ({ playerId, text }). */
 export const PLAYER_GUESS = "player:guess";
+export const PLAYER_PRESENCE = "player:presence";
+export const PLAYER_LEFT = "player:left";
 
 // --- Lobby ---
 export const LOBBY_CREATE = "lobby:create";
@@ -30,6 +38,15 @@ export const LOBBY_READY = "lobby:ready";
 export const LOBBY_START = "lobby:start";
 export const LOBBY_UPDATE = "lobby:update";
 export const LOBBY_CLOSED = "lobby:closed";
+export const LOBBY_LEAVE = "lobby:leave";
+export const LOBBY_ROUND_ENDED = "lobby:roundEnded";
+export const LOBBY_HEARTBEAT = "lobby:heartbeat";
+
+export const PHASE_REVEAL = "REVEAL";
+export const PHASE_CLUE = "CLUE";
+export const PHASE_VOTE = "VOTE";
+export const PHASE_ELIMINATION = "ELIMINATION";
+export const PHASE_RESULT = "RESULT";
 
 // --- Types de données ---
 export interface LobbyMember {
@@ -45,6 +62,7 @@ export interface PublicPlayer {
   pseudo: string;
   status: PlayerStatus;
   role: Role | null;
+  connected: boolean;
 }
 
 export interface BoardSnapshot {
@@ -56,6 +74,8 @@ export interface BoardSnapshot {
   votePhase: VotePhase;
   currentVoterId: number | null;
   tiedCandidates: number[];
+  votedPlayerIds: number[];
+  noElimination: NoElimination | null;
 }
 
 export interface VoteReveal {
@@ -90,6 +110,22 @@ export interface ResultSnapshot {
   victory: Victory;
   players: ResultPlayer[];
   totalScores: Record<string, number>;
+}
+
+export interface SyncSnapshot {
+  inRound: boolean;
+  participating: boolean;
+  phase: string;
+  privateRole: Role | null;
+  privateWord: string | null;
+  board: BoardSnapshot | null;
+  revealAcked: number;
+  revealTotal: number;
+  alreadyRevealed: boolean;
+  alreadyVoted: boolean;
+  elimination: EliminationSnapshot | null;
+  pendingUnknownGuess: boolean;
+  result: ResultSnapshot | null;
 }
 
 // --- Helpers de parsing ---
@@ -142,6 +178,10 @@ function parseVotePhase(value: string): VotePhase {
   return "IDLE";
 }
 
+function parseNoElimination(value: unknown): NoElimination | null {
+  return value === "TIE" || value === "NO_VOTES" ? value : null;
+}
+
 export function parseMembers(data: unknown): LobbyMember[] {
   const arr = Array.isArray(data) ? data : [];
   return arr.map((m) => {
@@ -173,6 +213,7 @@ export function parseBoard(data: unknown): BoardSnapshot {
       pseudo: optString(po, "pseudo"),
       status: parseStatus(optString(po, "status")),
       role: isNull(po.role) ? null : parseRole(optString(po, "role")),
+      connected: po.connected !== false,
     };
   });
   return {
@@ -184,7 +225,31 @@ export function parseBoard(data: unknown): BoardSnapshot {
     votePhase: parseVotePhase(optString(o, "votePhase")),
     currentVoterId: isNull(o.currentVoterId) ? null : optInt(o, "currentVoterId"),
     tiedCandidates: optNumberArray(o, "tiedCandidates"),
+    votedPlayerIds: optNumberArray(o, "votedPlayerIds"),
+    noElimination: parseNoElimination(o.noElimination),
   };
+}
+
+export function parseStartPlayerIds(data: unknown): number[] {
+  return optNumberArray(asRecord(data), "playerIds");
+}
+
+export function parseCancelledReason(data: unknown): string | null {
+  const reason = optString(asRecord(data), "reason");
+  return reason.length > 0 ? reason : null;
+}
+
+export function cancelledMessage(reason: string | null | undefined): string {
+  switch (reason) {
+    case CANCEL_NOT_ENOUGH_PLAYERS:
+      return "Partie annulée : plus assez de joueurs";
+    case CANCEL_HOST_CANCELLED:
+      return "Manche annulée par le Maître du Jeu";
+    case CANCEL_ROUND_LOST:
+      return "La manche a été perdue (l'appli a été fermée)";
+    default:
+      return "Partie annulée";
+  }
 }
 
 export function parseElimination(data: unknown): EliminationSnapshot | null {
@@ -212,6 +277,27 @@ function parseVoteReveals(raw: unknown): VoteReveal[] {
     if (!voter || !target) return [];
     return [{ voterPseudo: voter, targetPseudo: target }];
   });
+}
+
+export function parseSync(data: unknown): SyncSnapshot {
+  const o = asRecord(data);
+  const participating = optBool(o, "participating");
+  const parsedPrivate = isNull(o.private) ? null : parsePrivate(o.private);
+  return {
+    inRound: optBool(o, "inRound"),
+    participating,
+    phase: optString(o, "phase"),
+    privateRole: participating ? (parsedPrivate?.role ?? null) : null,
+    privateWord: participating ? (parsedPrivate?.word ?? null) : null,
+    board: isNull(o.board) ? null : parseBoard(o.board),
+    revealAcked: optInt(o, "revealAcked"),
+    revealTotal: optInt(o, "revealTotal"),
+    alreadyRevealed: optBool(o, "alreadyRevealed"),
+    alreadyVoted: optBool(o, "alreadyVoted"),
+    elimination: isNull(o.elimination) ? null : parseElimination(o.elimination),
+    pendingUnknownGuess: optBool(o, "pendingUnknownGuess"),
+    result: isNull(o.result) ? null : parseResult(o.result),
+  };
 }
 
 export function parseResult(data: unknown): ResultSnapshot {

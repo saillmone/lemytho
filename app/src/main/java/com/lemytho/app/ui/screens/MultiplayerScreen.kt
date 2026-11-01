@@ -2,7 +2,6 @@ package com.lemytho.app.ui.screens
 
 import android.content.Intent
 import androidx.compose.foundation.Image
-import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -14,10 +13,8 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
@@ -40,8 +37,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
@@ -116,6 +111,7 @@ fun MultiplayerNavHost(
             categories = state.categories,
             selectedCategory = state.selectedCategory,
             memberCount = state.members.count { (it.ready || it.isHost) && it.connected },
+            offlineReadyCount = state.members.count { (it.ready || it.isHost) && !it.connected },
             threePlayerIsUnknown = state.threePlayerIsUnknown,
             onCategoryChange = onSetCategory,
             onThreePlayerIsUnknownChange = onSetThreePlayerIsUnknown,
@@ -138,6 +134,11 @@ fun MultiplayerNavHost(
             members = state.members,
             myPlayerId = state.myPlayerId,
             error = state.error,
+            spectator = state.inRound && !state.participating,
+            roundPlayerIds = state.roundPlayerIds,
+            connectionStatus = state.connectionStatus,
+            hostPaused = state.hostPaused,
+            awaitingSync = state.awaitingSync,
             onSetReady = onSetReady,
             onBack = onBack
         )
@@ -146,18 +147,27 @@ fun MultiplayerNavHost(
             val myId = state.myPlayerId
             val role = state.myRole
             if (myId != null && role != null) {
-                RevealOwnScreen(
-                    player = Player(
-                        id = myId,
-                        pseudo = state.myPseudo,
-                        role = role,
-                        assignedWord = state.myWord ?: ""
-                    ),
-                    waiting = state.revealConfirmed,
-                    ackedCount = state.revealAcked,
-                    totalCount = state.revealTotal,
-                    onDone = onGuestRevealDone
-                )
+                Column(modifier = Modifier.fillMaxSize()) {
+                    GuestSessionBanners(
+                        connectionStatus = state.connectionStatus,
+                        hostPaused = state.hostPaused,
+                        awaitingSync = state.awaitingSync
+                    )
+                    Box(modifier = Modifier.weight(1f)) {
+                        RevealOwnScreen(
+                            player = Player(
+                                id = myId,
+                                pseudo = state.myPseudo,
+                                role = role,
+                                assignedWord = state.myWord ?: ""
+                            ),
+                            waiting = state.revealConfirmed,
+                            ackedCount = state.revealAcked,
+                            totalCount = state.revealTotal,
+                            onDone = onGuestRevealDone
+                        )
+                    }
+                }
             }
         }
 
@@ -165,26 +175,45 @@ fun MultiplayerNavHost(
             val board = state.board
             val myId = state.myPlayerId
             if (board != null && myId != null) {
-                GuestBoardScreen(
-                    board = board,
-                    myId = myId,
-                    hasVoted = state.hasVoted,
-                    onCastVote = onGuestCastVote
-                )
+                Column(modifier = Modifier.fillMaxSize()) {
+                    GuestSessionBanners(
+                        connectionStatus = state.connectionStatus,
+                        hostPaused = state.hostPaused,
+                        awaitingSync = state.awaitingSync
+                    )
+                    Box(modifier = Modifier.weight(1f)) {
+                        GuestBoardScreen(
+                            board = board,
+                            myId = myId,
+                            hasVoted = state.hasVoted,
+                            onCastVote = onGuestCastVote
+                        )
+                    }
+                }
             }
         }
 
         MultiplayerScreen.GuestElimination -> {
             val elimination = state.elimination
             if (elimination != null) {
-                GuestEliminationScreen(
-                    elimination = elimination,
-                    isMe = elimination.playerId == state.myPlayerId,
-                    guestResult = state.guestResult,
-                    guessSubmitted = state.guessSubmitted,
-                    onSubmitGuess = onGuestSubmitGuess,
-                    onSeeResults = onGuestSeeResults
-                )
+                Column(modifier = Modifier.fillMaxSize()) {
+                    GuestSessionBanners(
+                        connectionStatus = state.connectionStatus,
+                        hostPaused = state.hostPaused,
+                        awaitingSync = state.awaitingSync
+                    )
+                    Box(modifier = Modifier.weight(1f)) {
+                        GuestEliminationScreen(
+                            elimination = elimination,
+                            isMe = elimination.playerId == state.myPlayerId,
+                            guestResult = state.guestResult,
+                            guessSubmitted = state.guessSubmitted,
+                            myPseudo = state.myPseudo.takeIf { it.isNotBlank() },
+                            onSubmitGuess = onGuestSubmitGuess,
+                            onSeeResults = onGuestSeeResults
+                        )
+                    }
+                }
             }
         }
 
@@ -324,9 +353,9 @@ private fun HostLobbyScreen(
 ) {
     var showNotReadyConfirm by remember { mutableStateOf(false) }
     var showQuitConfirm by remember { mutableStateOf(false) }
-    val readyCount = members.count { it.ready }
-    val allReady = members.all { it.ready }
-    val playingCount = members.count { it.ready || it.isHost }
+    val readyCount = members.count { it.ready && it.connected }
+    val allReady = members.filter { it.connected }.all { it.ready }
+    val playingCount = members.count { (it.ready || it.isHost) && it.connected }
     val context = LocalContext.current
 
     MultiplayerBackground(backgroundRes = R.drawable.players_bg) {
@@ -407,7 +436,7 @@ private fun HostLobbyScreen(
 
         Spacer(Modifier.height(8.dp))
 
-        MemberList(members = members, myPlayerId = myPlayerId)
+        MemberList(members = members, myPlayerId = myPlayerId, roundPlayerIds = emptySet())
 
         Spacer(Modifier.height(16.dp))
 
@@ -483,6 +512,7 @@ private fun HostSetupScreen(
     categories: List<String>,
     selectedCategory: String?,
     memberCount: Int,
+    offlineReadyCount: Int = 0,
     threePlayerIsUnknown: Boolean,
     onCategoryChange: (String?) -> Unit,
     onThreePlayerIsUnknownChange: (Boolean) -> Unit,
@@ -573,10 +603,12 @@ private fun HostSetupScreen(
         Spacer(Modifier.height(16.dp))
 
         ScrimText(
-            text = if (memberCount >= 3) {
-                "Répartition : ${roleDistributionLabel(memberCount, threePlayerIsUnknown)}"
-            } else {
-                "En attente d'au moins 3 joueurs prêts…"
+            text = when {
+                memberCount >= 3 ->
+                    "Répartition : ${roleDistributionLabel(memberCount, threePlayerIsUnknown)}"
+                offlineReadyCount > 0 ->
+                    "$offlineReadyCount hors ligne, on ne peut pas lancer"
+                else -> "En attente d'au moins 3 joueurs prêts…"
             },
             style = MaterialTheme.typography.bodyMedium,
             textAlign = TextAlign.Center,
@@ -587,6 +619,7 @@ private fun HostSetupScreen(
 
         Button(
             onClick = onLaunch,
+            enabled = memberCount >= 3,
             modifier = Modifier.fillMaxWidth()
         ) {
             Text("Lancer la partie", fontSize = 18.sp)
@@ -692,27 +725,42 @@ private fun WaitingScreen(
     members: List<LobbyMember>,
     myPlayerId: Int?,
     error: String?,
+    spectator: Boolean = false,
+    roundPlayerIds: Set<Int> = emptySet(),
+    connectionStatus: ConnectionStatus = ConnectionStatus.Disconnected,
+    hostPaused: Boolean = false,
+    awaitingSync: Boolean = false,
     onSetReady: (Boolean) -> Unit,
     onBack: () -> Unit
 ) {
     val myReady = members.firstOrNull { it.playerId == myPlayerId }?.ready == true
-    val readyCount = members.count { it.ready }
-    val playingCount = members.count { it.ready || it.isHost }
+    val readyCount = members.count { it.ready && it.connected }
+    val playingCount = members.count { (it.ready || it.isHost) && it.connected }
     var showQuitConfirm by remember { mutableStateOf(false) }
 
     MultiplayerBackground(backgroundRes = R.drawable.players_bg) {
         Spacer(Modifier.height(40.dp))
 
         ScrimText(
-            text = "En attente…",
+            text = if (spectator) "Manche en cours" else "En attente…",
             style = MaterialTheme.typography.headlineMedium,
             fontWeight = FontWeight.Bold
         )
 
         Spacer(Modifier.height(16.dp))
 
+        GuestSessionBanners(
+            connectionStatus = connectionStatus,
+            hostPaused = hostPaused,
+            awaitingSync = awaitingSync
+        )
+
         ScrimText(
-            text = "Le Maître du Jeu va lancer la partie (salon ${code ?: ""})",
+            text = if (spectator) {
+                "Manche en cours, tu rejoindras la suivante."
+            } else {
+                "Le Maître du Jeu va lancer la partie (salon ${code ?: ""})"
+            },
             style = MaterialTheme.typography.bodyLarge
         )
 
@@ -734,22 +782,24 @@ private fun WaitingScreen(
             }
         }
 
-        if (readyCount < 3) {
-            Spacer(Modifier.height(12.dp))
-            ScrimText(
-                text = "En attente d'au moins 3 joueurs prêts…",
-                style = MaterialTheme.typography.bodySmall,
-                textAlign = TextAlign.Center,
-                modifier = Modifier.fillMaxWidth()
-            )
-        } else {
-            Spacer(Modifier.height(12.dp))
-            ScrimText(
-                text = "Répartition : ${roleLabelForLobby(playingCount)}",
-                style = MaterialTheme.typography.bodyMedium,
-                textAlign = TextAlign.Center,
-                modifier = Modifier.fillMaxWidth()
-            )
+        if (!spectator) {
+            if (readyCount < 3) {
+                Spacer(Modifier.height(12.dp))
+                ScrimText(
+                    text = "En attente d'au moins 3 joueurs prêts…",
+                    style = MaterialTheme.typography.bodySmall,
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier.fillMaxWidth()
+                )
+            } else {
+                Spacer(Modifier.height(12.dp))
+                ScrimText(
+                    text = "Répartition : ${roleLabelForLobby(playingCount)}",
+                    style = MaterialTheme.typography.bodyMedium,
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier.fillMaxWidth()
+                )
+            }
         }
 
         if (error != null) {
@@ -772,7 +822,7 @@ private fun WaitingScreen(
 
         Spacer(Modifier.height(8.dp))
 
-        MemberList(members = members, myPlayerId = myPlayerId)
+        MemberList(members = members, myPlayerId = myPlayerId, roundPlayerIds = roundPlayerIds)
 
         Spacer(Modifier.height(16.dp))
 
@@ -840,28 +890,30 @@ private fun MultiplayerBackground(
 }
 
 @Composable
-private fun MemberList(members: List<LobbyMember>, myPlayerId: Int?) {
+private fun MemberList(
+    members: List<LobbyMember>,
+    myPlayerId: Int?,
+    roundPlayerIds: Set<Int> = emptySet()
+) {
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
         members.forEach { member ->
-            val suffix = when {
-                member.playerId == myPlayerId -> " (toi)"
-                member.isHost -> " (Maître du Jeu)"
-                else -> ""
+            val inRound = member.playerId in roundPlayerIds
+            val filled = member.connected && (inRound || member.isHost || member.ready)
+            val suffix = buildString {
+                when {
+                    member.playerId == myPlayerId -> append(" (toi)")
+                    member.isHost -> append(" (Maître du Jeu)")
+                }
+                if (inRound && member.playerId != myPlayerId) append(" (en jeu)")
             }
-            val disconnected = if (!member.connected) " (déconnecté)" else ""
             Row(
                 verticalAlignment = Alignment.CenterVertically,
                 modifier = Modifier.fillMaxWidth()
             ) {
-                Box(
-                    modifier = Modifier
-                        .size(14.dp)
-                        .clip(CircleShape)
-                        .background(if (member.ready) Color(0xFF2E7D32) else Color(0xFFC62828))
-                )
+                PresenceDot(connected = member.connected, filled = filled)
                 Spacer(Modifier.width(8.dp))
                 ScrimText(
-                    text = "${member.pseudo}$suffix$disconnected",
+                    text = "${member.pseudo}$suffix",
                     style = MaterialTheme.typography.bodyLarge
                 )
             }

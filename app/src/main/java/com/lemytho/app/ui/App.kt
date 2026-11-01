@@ -1,5 +1,7 @@
 package com.lemytho.app.ui
 
+import android.app.Activity
+import android.view.WindowManager
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.safeDrawingPadding
@@ -7,14 +9,17 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalView
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.lemytho.app.data.model.PlayerStatus
 import com.lemytho.app.data.model.Role
 import com.lemytho.app.ui.screens.GameBoardScreen
+import com.lemytho.app.ui.screens.HostRoundOverlay
 import com.lemytho.app.ui.screens.HomeScreen
 import com.lemytho.app.ui.screens.PlayersScreen
 import com.lemytho.app.ui.screens.ResultScreen
@@ -25,6 +30,7 @@ import com.lemytho.app.ui.screens.EliminationScreen
 import com.lemytho.app.ui.screens.MultiplayerNavHost
 import com.lemytho.app.ui.screens.RevealOwnScreen
 import com.lemytho.app.ui.multiplayer.MultiplayerViewModel
+import com.lemytho.app.net.GameProtocol
 import com.lemytho.app.net.Protocol
 
 /**
@@ -38,12 +44,42 @@ fun LeMythoAppRoot(
     multiplayerViewModel: MultiplayerViewModel
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
+    val mpState by multiplayerViewModel.uiState.collectAsStateWithLifecycle()
+    val view = LocalView.current
 
-    // Annulation de partie (plus assez de joueurs) : l'hôte rejoint son salon.
-    LaunchedEffect(state.hostAborted) {
-        if (state.hostAborted) {
-            multiplayerViewModel.abortToLobby("Partie annulée : plus assez de joueurs")
+    DisposableEffect(mpState.lobbyCode) {
+        val window = (view.context as Activity).window
+        if (mpState.lobbyCode != null) {
+            window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
+        } else {
+            window.clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
+        }
+        onDispose {
+            window.clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
+        }
+    }
+
+    LaunchedEffect(state.hostAbortReason) {
+        val reason = state.hostAbortReason
+        if (reason != null) {
+            multiplayerViewModel.abortToLobby(GameProtocol.cancelledMessage(reason))
             viewModel.acknowledgeAbort()
+        }
+    }
+
+    LaunchedEffect(mpState.members) {
+        viewModel.syncSpectators(mpState.members)
+    }
+
+    LaunchedEffect(mpState.hostSeatResumedTick) {
+        if (mpState.hostSeatResumedTick > 0) {
+            viewModel.onHostSeatResumed(mpState.hostResumeInRound)
+        }
+    }
+
+    LaunchedEffect(mpState.lobbyCode) {
+        if (mpState.lobbyCode != null && state.currentScreen == Screen.Home) {
+            viewModel.navigate(Screen.Multiplayer)
         }
     }
 
@@ -88,6 +124,13 @@ fun LeMythoAppRoot(
                 if (state.multiplayerHost) {
                     val host = state.players.firstOrNull { it.id == Protocol.HOST_PLAYER_ID }
                     if (host != null) {
+                    HostRoundOverlay(
+                        players = state.players,
+                        offlinePlayerIds = state.offlinePlayerIds,
+                        skippableIds = state.skippablePlayerIds(),
+                        onSkipWait = viewModel::skipWait,
+                        onCancelRound = viewModel::cancelRound
+                    ) {
                     RevealOwnScreen(
                         player = host,
                         waiting = Protocol.HOST_PLAYER_ID in state.revealAcks,
@@ -95,6 +138,7 @@ fun LeMythoAppRoot(
                         totalCount = state.players.size,
                         onDone = viewModel::hostRevealDone
                     )
+                    }
                     }
                 } else {
                     val player = state.players.getOrNull(state.revealIndex)
@@ -153,6 +197,7 @@ fun LeMythoAppRoot(
                         val currentVoterId = state.voteOrder.getOrNull(state.currentVoterIndex)
                         state.players.firstOrNull { it.id == currentVoterId }
                     }
+                    val board: @Composable () -> Unit = {
                     GameBoardScreen(
                         players = state.players,
                         category = state.wordPair?.category,
@@ -165,9 +210,29 @@ fun LeMythoAppRoot(
                         selfVote = state.multiplayerHost,
                         selfId = if (state.multiplayerHost) Protocol.HOST_PLAYER_ID else null,
                         hasVoted = state.multiplayerHost && Protocol.HOST_PLAYER_ID in state.votes,
+                        offlinePlayerIds = state.offlinePlayerIds,
+                        votedPlayerIds = if (state.votePhase == VotePhase.IDLE) {
+                            emptySet()
+                        } else {
+                            state.votes.keys
+                        },
+                        noElimination = state.noElimination,
                         onStartVote = viewModel::startVote,
                         onCastVote = if (state.multiplayerHost) viewModel::hostCastVote else viewModel::castVote
                     )
+                    }
+                    if (state.multiplayerHost) {
+                        HostRoundOverlay(
+                            players = state.players,
+                            offlinePlayerIds = state.offlinePlayerIds,
+                            skippableIds = state.skippablePlayerIds(),
+                            onSkipWait = viewModel::skipWait,
+                            onCancelRound = viewModel::cancelRound,
+                            content = board
+                        )
+                    } else {
+                        board()
+                    }
                 }
             }
 
@@ -178,6 +243,7 @@ fun LeMythoAppRoot(
                         ?.let { id -> state.players.firstOrNull { it.id == id } }
                     val isTypingDevice = !state.multiplayerHost ||
                         elimination.playerId == Protocol.HOST_PLAYER_ID
+                    val eliminationUi: @Composable () -> Unit = {
                     EliminationScreen(
                         elimination = elimination,
                         result = state.result,
@@ -185,16 +251,33 @@ fun LeMythoAppRoot(
                         pendingUnknownGuess = pendingGuess,
                         canTypeGuess = pendingGuess != null && isTypingDevice,
                         useSelfCopy = isTypingDevice && elimination.role == Role.UNKNOWN,
+                        myPseudo = if (state.multiplayerHost) {
+                            state.players.firstOrNull { it.id == Protocol.HOST_PLAYER_ID }?.pseudo
+                        } else {
+                            null
+                        },
                         onContinue = viewModel::continueAfterElimination,
                         onResolveUnknownGuess = viewModel::resolveUnknownGuess
                     )
+                    }
+                    if (state.multiplayerHost) {
+                        HostRoundOverlay(
+                            players = state.players,
+                            offlinePlayerIds = state.offlinePlayerIds,
+                            skippableIds = state.skippablePlayerIds(),
+                            onSkipWait = viewModel::skipWait,
+                            onCancelRound = viewModel::cancelRound,
+                            content = eliminationUi
+                        )
+                    } else {
+                        eliminationUi()
+                    }
                 } else {
                     ComingSoon("Élimination")
                 }
             }
 
             Screen.Multiplayer -> {
-                val mpState by multiplayerViewModel.uiState.collectAsStateWithLifecycle()
                 MultiplayerNavHost(
                     state = mpState,
                     onBack = {

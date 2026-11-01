@@ -186,14 +186,11 @@ fun ResultScreen(
 
 @Composable
 private fun RankBadge(rank: Int) {
-    if (rank !in 1..3) {
-        Spacer(Modifier.width(28.dp))
-        return
-    }
     val (background, foreground) = when (rank) {
-        1 -> Color(0xFFD4AF37) to Color(0xFF3A2E00) // or
-        2 -> Color(0xFFB8B8B8) to Color(0xFF2A2A2A) // argent
-        else -> Color(0xFFCD7F32) to Color(0xFF331C00) // bronze
+        1 -> Color(0xFFD4AF37) to Color(0xFF3A2E00)
+        2 -> Color(0xFFB8B8B8) to Color(0xFF2A2A2A)
+        3 -> Color(0xFFCD7F32) to Color(0xFF331C00)
+        else -> Color(0xFF3A4150) to Color.White
     }
     Box(
         modifier = Modifier

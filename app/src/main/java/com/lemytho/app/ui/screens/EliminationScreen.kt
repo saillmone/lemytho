@@ -2,12 +2,12 @@ package com.lemytho.app.ui.screens
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
@@ -51,6 +51,7 @@ fun EliminationScreen(
     pendingUnknownGuess: Player?,
     canTypeGuess: Boolean,
     useSelfCopy: Boolean,
+    myPseudo: String? = null,
     onContinue: () -> Unit,
     onResolveUnknownGuess: (String) -> Unit
 ) {
@@ -87,55 +88,57 @@ fun EliminationScreen(
                 textAlign = TextAlign.Center
             )
 
-            Box(
+            val messages = eliminationMessages(
+                result = result,
+                pendingUnknownGuess = pendingUnknownGuess,
+                elimination = elimination,
+                canTypeGuess = canTypeGuess,
+                useSelfCopy = useSelfCopy,
+                turnNumber = turnNumber
+            )
+            BoxWithConstraints(
                 modifier = Modifier
                     .weight(1f)
                     .fillMaxWidth()
             ) {
-                val messages = eliminationMessages(
-                    result = result,
-                    pendingUnknownGuess = pendingUnknownGuess,
-                    elimination = elimination,
-                    canTypeGuess = canTypeGuess,
-                    useSelfCopy = useSelfCopy,
-                    turnNumber = turnNumber
-                )
-                Column(
-                    modifier = Modifier
-                        .align(Alignment.Center)
-                        .offset(y = (-128).dp),
-                    horizontalAlignment = Alignment.CenterHorizontally
-                ) {
-                    if (messages.verdict != null) {
-                        val verdictPill = @Composable {
-                            ScrimText(
-                                text = messages.verdict,
-                                style = MaterialTheme.typography.titleMedium,
-                                fontWeight = FontWeight.Bold,
-                                textAlign = TextAlign.Center
-                            )
-                        }
-                        if (elimination.guessResolved && elimination.guessCorrect) {
-                            GuessWinSparkles { verdictPill() }
-                        } else {
-                            verdictPill()
-                        }
-                    }
-                    if (messages.followUp != null) {
-                        if (messages.verdict != null) {
-                            Spacer(Modifier.height(8.dp))
-                        }
-                        ScrimText(
-                            text = messages.followUp,
-                            style = MaterialTheme.typography.titleMedium,
-                            fontWeight = FontWeight.Bold,
-                            textAlign = TextAlign.Center
-                        )
-                    }
+                if (elimination.votes.isNotEmpty()) {
+                    VoteRevealList(
+                        votes = elimination.votes,
+                        eliminatedPseudo = elimination.pseudo,
+                        eliminatedRole = elimination.role,
+                        myPseudo = myPseudo,
+                        maxHeight = maxHeight * 0.85f,
+                        modifier = Modifier.align(Alignment.Center)
+                    )
                 }
-                ShowVotesControl(
-                    votes = elimination.votes,
-                    modifier = Modifier.align(Alignment.Center)
+            }
+
+            if (messages.verdict != null) {
+                val verdictPill = @Composable {
+                    ScrimText(
+                        text = messages.verdict,
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold,
+                        textAlign = TextAlign.Center
+                    )
+                }
+                if (elimination.guessResolved && elimination.guessCorrect) {
+                    GuessWinSparkles { verdictPill() }
+                } else {
+                    verdictPill()
+                }
+            }
+            if (messages.followUp != null) {
+                if (messages.verdict != null) {
+                    Spacer(Modifier.height(8.dp))
+                } else {
+                    Spacer(Modifier.height(16.dp))
+                }
+                ScrimText(
+                    text = messages.followUp,
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold,
+                    textAlign = TextAlign.Center
                 )
             }
 

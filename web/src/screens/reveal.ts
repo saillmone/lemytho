@@ -1,6 +1,6 @@
 // Écran de révélation individuelle (miroir de RevealOwnScreen). Maintenir pour révéler.
 
-import { h, scrim } from "../ui";
+import { h, scrim, sessionBanners } from "../ui";
 import type { AppState } from "../state";
 import type { Actions } from "../actions";
 
@@ -85,6 +85,7 @@ export function renderReveal(state: AppState, actions: Actions): HTMLElement {
   inner.append(
     h("h1", { class: "center" }, scrim("Révélation")),
     h("div", { class: "spacer" }),
+    sessionBanners(state),
     h("div", { class: "center" }, scrim(state.pseudo)),
     content,
     h("div", { class: "spacer" }),

@@ -4,6 +4,7 @@ import com.lemytho.app.data.model.Player
 import com.lemytho.app.data.model.PlayerStatus
 import com.lemytho.app.data.model.Role
 import com.lemytho.app.engine.Victory
+import com.lemytho.app.ui.NoElimination
 import com.lemytho.app.ui.VotePhase
 import com.lemytho.app.ui.VoteReveal
 import org.json.JSONArray
@@ -14,7 +15,25 @@ data class PublicPlayer(
     val playerId: Int,
     val pseudo: String,
     val status: PlayerStatus,
-    val role: Role? = null
+    val role: Role? = null,
+    val connected: Boolean = true
+)
+
+/** Photo de manche envoyée à un invité qui reprend sa chaise. */
+data class SyncSnapshot(
+    val inRound: Boolean,
+    val participating: Boolean,
+    val phase: String,
+    val privateRole: Role? = null,
+    val privateWord: String? = null,
+    val board: BoardSnapshot? = null,
+    val revealAcked: Int = 0,
+    val revealTotal: Int = 0,
+    val alreadyRevealed: Boolean = false,
+    val alreadyVoted: Boolean = false,
+    val elimination: EliminationSnapshot? = null,
+    val pendingUnknownGuess: Boolean = false,
+    val result: ResultSnapshot? = null
 )
 
 /** Instantané public du plateau, diffusé par l'hôte. */
@@ -26,7 +45,9 @@ data class BoardSnapshot(
     val category: String?,
     val votePhase: VotePhase,
     val currentVoterId: Int?,
-    val tiedCandidates: Set<Int>
+    val tiedCandidates: Set<Int>,
+    val votedPlayerIds: List<Int> = emptyList(),
+    val noElimination: NoElimination? = null
 )
 
 /** Instantané d'une élimination (rôle révélé publiquement). */
@@ -59,8 +80,26 @@ object GameProtocol {
 
     // --- Sérialisation (hôte -> invités) ---
 
-    fun startPayload(category: String?): JSONObject =
-        JSONObject().put("category", category ?: JSONObject.NULL)
+    fun startPayload(category: String?, playerIds: List<Int> = emptyList()): JSONObject =
+        JSONObject()
+            .put("category", category ?: JSONObject.NULL)
+            .put("playerIds", JSONArray(playerIds))
+
+    fun cancelledPayload(reason: String): JSONObject =
+        JSONObject().put("reason", reason)
+
+    fun cancelledMessage(reason: String?): String = when (reason) {
+        Protocol.CANCEL_NOT_ENOUGH_PLAYERS -> "Partie annulée : plus assez de joueurs"
+        Protocol.CANCEL_HOST_CANCELLED -> "Manche annulée par le Maître du Jeu"
+        Protocol.CANCEL_ROUND_LOST -> "La manche a été perdue (l'appli a été fermée)"
+        else -> "Partie annulée"
+    }
+
+    fun parseCancelledReason(obj: JSONObject): String? =
+        obj.optString("reason").takeIf { it.isNotBlank() }
+
+    fun parseStartPlayerIds(obj: JSONObject): List<Int> =
+        parseIntList(obj.optJSONArray("playerIds"))
 
     fun privatePayload(role: Role, word: String): JSONObject =
         JSONObject().put("role", role.name).put("word", word)
@@ -79,7 +118,10 @@ object GameProtocol {
         category: String?,
         votePhase: VotePhase,
         currentVoterId: Int?,
-        tiedCandidates: Set<Int>
+        tiedCandidates: Set<Int>,
+        offlinePlayerIds: Set<Int> = emptySet(),
+        votedPlayerIds: List<Int> = emptyList(),
+        noElimination: NoElimination? = null
     ): JSONObject {
         val playersArray = JSONArray()
         players.forEach { p ->
@@ -89,9 +131,10 @@ object GameProtocol {
                     .put("pseudo", p.pseudo)
                     .put("status", p.status.name)
                     .put("role", if (p.status == PlayerStatus.ELIMINATED) p.role.name else JSONObject.NULL)
+                    .put("connected", p.id !in offlinePlayerIds)
             )
         }
-        return JSONObject()
+        val payload = JSONObject()
             .put("players", playersArray)
             .put("clueOrder", JSONArray(clueOrder))
             .put("roundNumber", roundNumber)
@@ -100,6 +143,11 @@ object GameProtocol {
             .put("votePhase", votePhase.name)
             .put("currentVoterId", currentVoterId ?: JSONObject.NULL)
             .put("tiedCandidates", JSONArray(tiedCandidates.toList()))
+            .put("votedPlayerIds", JSONArray(votedPlayerIds))
+        if (noElimination != null) {
+            payload.put("noElimination", noElimination.name)
+        }
+        return payload
     }
 
     fun eliminationPayload(
@@ -154,6 +202,41 @@ object GameProtocol {
             .put("totalScores", scores)
     }
 
+    fun syncPayload(
+        inRound: Boolean,
+        participating: Boolean,
+        phase: String,
+        privateRole: Role? = null,
+        privateWord: String? = null,
+        board: JSONObject? = null,
+        revealAcked: Int = 0,
+        revealTotal: Int = 0,
+        alreadyRevealed: Boolean = false,
+        alreadyVoted: Boolean = false,
+        elimination: JSONObject? = null,
+        pendingUnknownGuess: Boolean = false,
+        result: JSONObject? = null
+    ): JSONObject {
+        val payload = JSONObject()
+            .put("inRound", inRound)
+            .put("participating", participating)
+            .put("phase", phase)
+            .put("revealAcked", revealAcked)
+            .put("revealTotal", revealTotal)
+            .put("alreadyRevealed", alreadyRevealed)
+            .put("alreadyVoted", alreadyVoted)
+            .put("pendingUnknownGuess", pendingUnknownGuess)
+            .put("board", board ?: JSONObject.NULL)
+            .put("elimination", elimination ?: JSONObject.NULL)
+            .put("result", result ?: JSONObject.NULL)
+        if (participating && privateRole != null) {
+            payload.put("private", privatePayload(privateRole, privateWord.orEmpty()))
+        } else {
+            payload.put("private", JSONObject.NULL)
+        }
+        return payload
+    }
+
     // --- Désérialisation (invité) ---
 
     fun parsePrivate(obj: JSONObject): Pair<Role, String>? {
@@ -171,7 +254,9 @@ object GameProtocol {
             category = obj.optNullableString("category"),
             votePhase = parseVotePhase(obj.optString("votePhase")),
             currentVoterId = if (obj.isNull("currentVoterId")) null else obj.optInt("currentVoterId"),
-            tiedCandidates = parseIntList(obj.optJSONArray("tiedCandidates")).toSet()
+            tiedCandidates = parseIntList(obj.optJSONArray("tiedCandidates")).toSet(),
+            votedPlayerIds = parseIntList(obj.optJSONArray("votedPlayerIds")),
+            noElimination = parseNoElimination(obj)
         )
     }
 
@@ -220,6 +305,30 @@ object GameProtocol {
         return ResultSnapshot(victory = victory, players = players, totalScores = scores)
     }
 
+    fun parseSync(obj: JSONObject): SyncSnapshot {
+        val participating = obj.optBoolean("participating", false)
+        val privateObj = if (obj.isNull("private")) null else obj.optJSONObject("private")
+        val parsedPrivate = privateObj?.let { parsePrivate(it) }
+        val boardObj = if (obj.isNull("board")) null else obj.optJSONObject("board")
+        val elimObj = if (obj.isNull("elimination")) null else obj.optJSONObject("elimination")
+        val resultObj = if (obj.isNull("result")) null else obj.optJSONObject("result")
+        return SyncSnapshot(
+            inRound = obj.optBoolean("inRound"),
+            participating = participating,
+            phase = obj.optString("phase"),
+            privateRole = if (participating) parsedPrivate?.first else null,
+            privateWord = if (participating) parsedPrivate?.second else null,
+            board = boardObj?.let { parseBoard(it) },
+            revealAcked = obj.optInt("revealAcked"),
+            revealTotal = obj.optInt("revealTotal"),
+            alreadyRevealed = obj.optBoolean("alreadyRevealed"),
+            alreadyVoted = obj.optBoolean("alreadyVoted"),
+            elimination = elimObj?.let { parseElimination(it) },
+            pendingUnknownGuess = obj.optBoolean("pendingUnknownGuess"),
+            result = resultObj?.let { parseResult(it) }
+        )
+    }
+
     // --- Helpers ---
 
     private fun parsePublicPlayers(arr: JSONArray?): List<PublicPlayer> {
@@ -232,7 +341,8 @@ object GameProtocol {
                         playerId = p.optInt("playerId"),
                         pseudo = p.optString("pseudo"),
                         status = parseStatus(p.optString("status")),
-                        role = if (p.isNull("role")) null else parseRole(p.optString("role"))
+                        role = if (p.isNull("role")) null else parseRole(p.optString("role")),
+                        connected = p.optBoolean("connected", true)
                     )
                 )
             }
@@ -266,6 +376,11 @@ object GameProtocol {
 
     private fun parseVotePhase(value: String): VotePhase =
         runCatching { VotePhase.valueOf(value) }.getOrDefault(VotePhase.IDLE)
+
+    private fun parseNoElimination(obj: JSONObject): NoElimination? {
+        if (!obj.has("noElimination") || obj.isNull("noElimination")) return null
+        return runCatching { NoElimination.valueOf(obj.optString("noElimination")) }.getOrNull()
+    }
 }
 
 // --- Conversions de Victory vers/depuis le format "filaire" ---

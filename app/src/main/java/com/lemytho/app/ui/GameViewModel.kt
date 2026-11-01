@@ -13,6 +13,7 @@ import com.lemytho.app.engine.Victory
 import com.lemytho.app.engine.VoteOutcome
 import com.lemytho.app.engine.WordGuessMatcher
 import com.lemytho.app.net.ConnectionManager
+import com.lemytho.app.net.GameProtocol
 import com.lemytho.app.net.HostSession
 import com.lemytho.app.net.LobbyMember
 import com.lemytho.app.net.Protocol
@@ -34,6 +35,9 @@ class GameViewModel(
 
     /** Session de diffusion vers les invités (null en jeu local). */
     private var hostSession: HostSession? = null
+
+    /** Spectateurs déjà syncés cette manche (évite un game:sync à chaque lobby:update). */
+    private val syncedSpectatorIds = mutableSetOf<Int>()
 
     init {
         viewModelScope.launch {
@@ -130,6 +134,7 @@ class GameViewModel(
                     unknownGuessCorrect = null,
                     result = null,
                     finalScores = emptyMap(),
+                    noElimination = null,
                     currentScreen = Screen.Reveal
                 )
             }
@@ -181,7 +186,9 @@ class GameViewModel(
                 val newState = state.copy(
                     votePhase = VotePhase.VOTING,
                     votes = emptyMap(),
-                    tiedCandidates = emptySet()
+                    tiedCandidates = emptySet(),
+                    skippedVoters = emptySet(),
+                    noElimination = null
                 )
                 broadcastBoard(newState)
                 hostSession?.sendPhase(Protocol.PHASE_VOTE)
@@ -192,7 +199,8 @@ class GameViewModel(
                     voteOrder = active.map { it.id },
                     currentVoterIndex = 0,
                     votes = emptyMap(),
-                    tiedCandidates = emptySet()
+                    tiedCandidates = emptySet(),
+                    noElimination = null
                 )
             }
         }
@@ -232,10 +240,10 @@ class GameViewModel(
                     val tiedIds = outcome.candidateIds
                     val secondVoters = activePlayers(state)
                         .map { it.id }
-                        .filter { it !in tiedIds }
+                        .filter { it !in tiedIds && it !in state.skippedVoters }
                     if (secondVoters.isEmpty()) {
-                        // Cas dégénéré : tous les actifs sont ex æquo → tirage au sort direct.
-                        applyElimination(state, gameEngine.randomElimination(tiedIds))
+                        // Tous ex æquo, ou plus personne hors skipped pour revoter.
+                        skipEliminationRound(state, NoElimination.TIE)
                     } else {
                         state.copy(
                             votePhase = VotePhase.SECOND_ROUND,
@@ -261,6 +269,8 @@ class GameViewModel(
             votePhase = VotePhase.IDLE,
             votes = emptyMap(),
             tiedCandidates = emptySet(),
+            skippedVoters = emptySet(),
+            noElimination = null,
             elimination = EliminationEvent(
                 playerId = target.id,
                 pseudo = target.pseudo,
@@ -288,13 +298,13 @@ class GameViewModel(
 
     // --- Ultime tentative de l'Inconnu ---
 
-    fun resolveUnknownGuess(guess: String) {
+    fun resolveUnknownGuess(guess: String, forcedFail: Boolean = false) {
         val state = _uiState.value
         val unknownId = state.pendingUnknownGuess ?: return
         val trimmed = guess.trim().take(WordGuessMatcher.MAX_GUESS_LENGTH)
-        if (trimmed.isEmpty()) return
+        if (!forcedFail && trimmed.isEmpty()) return
         val citizenWord = state.wordPair?.citizenWord.orEmpty()
-        val validated = WordGuessMatcher.matchesCitizenWord(trimmed, citizenWord)
+        val validated = !forcedFail && WordGuessMatcher.matchesCitizenWord(trimmed, citizenWord)
         val guessText = if (validated) {
             citizenWord.ifBlank { trimmed }
         } else {
@@ -409,7 +419,7 @@ class GameViewModel(
             val withWords = gameEngine.assignWords(players, wordPair)
             val session = hostSession ?: HostSession(connectionManager)
             hostSession = session
-            session.sendStart(wordPair.category)
+            session.sendStart(wordPair.category, withWords.map { it.id })
             withWords.forEach { player ->
                 session.sendPrivate(player.id, player.role, player.assignedWord)
             }
@@ -433,10 +443,41 @@ class GameViewModel(
                     totalScores = if (isReplay) st.totalScores else emptyMap(),
                     multiplayerHost = true,
                     revealAcks = emptySet(),
+                    offlinePlayerIds = emptySet(),
+                    skippedVoters = emptySet(),
+                    noElimination = null,
                     selectedCategory = category,
                     currentScreen = Screen.Reveal
                 )
             }
+            val guests = members.filter {
+                it.connected && it.playerId != Protocol.HOST_PLAYER_ID
+            }
+            guests.forEach { sendSyncTo(it.playerId) }
+            syncedSpectatorIds.clear()
+            val playingIds = withWords.map { it.id }.toSet()
+            syncedSpectatorIds.addAll(
+                guests.filter { it.playerId !in playingIds }.map { it.playerId }
+            )
+        }
+    }
+
+    /**
+     * Envoie game:sync aux nouveaux sièges hors manche. No-op s'il n'y a
+     * personne de nouveau (ready / présence d'un joueur en jeu).
+     */
+    fun syncSpectators(members: List<LobbyMember>) {
+        val s = _uiState.value
+        if (!s.multiplayerHost || !isHostRoundScreen(s)) return
+        val playingIds = s.players.map { it.id }.toSet()
+        members.filter { member ->
+            member.connected &&
+                member.playerId != Protocol.HOST_PLAYER_ID &&
+                member.playerId !in playingIds &&
+                member.playerId !in syncedSpectatorIds
+        }.forEach { member ->
+            sendSyncTo(member.playerId)
+            syncedSpectatorIds.add(member.playerId)
         }
     }
 
@@ -456,11 +497,70 @@ class GameViewModel(
 
     /** L'hôte retourne au salon après une manche (il s'est déclaré prêt). */
     fun hostReturnToLobby() {
+        notifyRoundOver()
+        connectionManager.endRoundOnServer()
+        syncedSpectatorIds.clear()
         _uiState.update { state ->
             state.copy(
                 currentScreen = Screen.Multiplayer,
-                multiplayerHost = false
+                multiplayerHost = false,
+                offlinePlayerIds = emptySet(),
+                skippedVoters = emptySet()
             )
+        }
+    }
+
+    /** Hôte : arrête la manche et renvoie tout le monde au salon. */
+    fun cancelRound() {
+        if (!_uiState.value.multiplayerHost) return
+        _uiState.update { abortGame(it, Protocol.CANCEL_HOST_CANCELLED) }
+    }
+
+    /**
+     * Après un `lobby:create` repris : si la ViewModel n'a plus la manche,
+     * on annule côté invités ; sinon on renvoie l'état à tout le monde.
+     */
+    fun onHostSeatResumed(serverInRound: Boolean) {
+        val s = _uiState.value
+        val localInRound = s.multiplayerHost && isHostRoundScreen(s)
+        if (localInRound) {
+            syncAllGuests()
+            return
+        }
+        if (serverInRound) {
+            (hostSession ?: HostSession(connectionManager))
+                .sendCancelled(Protocol.CANCEL_ROUND_LOST)
+            connectionManager.endRoundOnServer()
+        }
+    }
+
+    /**
+     * Hôte : ne plus attendre un joueur hors ligne (ack / vote / guess).
+     * 0 bulletin et plus personne à attendre → tour d'indices suivant.
+     */
+    fun skipWait(playerId: Int) {
+        val s = _uiState.value
+        if (!s.multiplayerHost) return
+        if (playerId !in s.offlinePlayerIds) return
+        if (s.currentScreen == Screen.Elimination && s.pendingUnknownGuess == playerId) {
+            resolveUnknownGuess("", forcedFail = true)
+            return
+        }
+        if (s.currentScreen == Screen.Reveal && playerId !in s.revealAcks) {
+            applyHostAck(playerId)
+            return
+        }
+        if (s.votePhase == VotePhase.IDLE) return
+        _uiState.update { state ->
+            if (playerId !in state.offlinePlayerIds) return@update state
+            val next = state.copy(skippedVoters = state.skippedVoters + playerId)
+            val expected = expectedVoters(next)
+            when {
+                expected.isEmpty() && next.votes.isEmpty() ->
+                    skipEliminationRound(next, NoElimination.NO_VOTES)
+                next.votes.keys.containsAll(expected) || expected.isEmpty() -> resolveRoundHost(next)
+                else -> next
+            }
         }
     }
 
@@ -474,41 +574,79 @@ class GameViewModel(
                 event.data.optInt("playerId"),
                 event.data.optString("text")
             )
-            Protocol.EVENT_PLAYER_DISCONNECTED -> onPlayerDisconnected(event.data.optInt("playerId"))
+            Protocol.EVENT_PLAYER_PRESENCE -> onPresence(
+                event.data.optInt("playerId"),
+                event.data.optBoolean("connected")
+            )
+            Protocol.EVENT_PLAYER_LEFT -> onPlayerLeft(event.data.optInt("playerId"))
         }
     }
 
     /**
-     * Un invité s'est déconnecté en cours de partie. On le retire/élimine pour
-     * ne pas bloquer la manche : silencieusement pendant la révélation (le rôle
-     * n'est pas encore joué), avec révélation du rôle sinon (option A).
+     * Fil coupé ou revenu. Ne change pas le statut de jeu ; met à jour les
+     * badges et, au retour, envoie game:sync.
+     */
+    private fun onPresence(playerId: Int, connected: Boolean) {
+        val s = _uiState.value
+        if (!s.multiplayerHost) return
+        val inRound = isHostRoundScreen(s)
+        if (playerId != Protocol.HOST_PLAYER_ID) {
+            _uiState.update {
+                val offline = if (connected) it.offlinePlayerIds - playerId else it.offlinePlayerIds + playerId
+                val skipped = if (connected) it.skippedVoters - playerId else it.skippedVoters
+                it.copy(offlinePlayerIds = offline, skippedVoters = skipped)
+            }
+            if (inRound) broadcastBoard(_uiState.value)
+        }
+        if (connected && inRound) {
+            if (playerId == Protocol.HOST_PLAYER_ID) syncAllGuests()
+            else sendSyncTo(playerId)
+        }
+    }
+
+    /**
+     * Départ franc en cours de partie. On le retire/élimine : silencieusement
+     * pendant la révélation, avec révélation du rôle sinon (option A).
      * Si le nombre de joueurs tombe sous 3, la partie est annulée.
      */
-    private fun onPlayerDisconnected(playerId: Int) {
+    private fun onPlayerLeft(playerId: Int) {
         if (!_uiState.value.multiplayerHost) return
         _uiState.update { state ->
+            if (!isHostRoundScreen(state) || state.result != null) {
+                return@update state
+            }
             val target = state.players.firstOrNull { it.id == playerId } ?: return@update state
             if (target.status == PlayerStatus.ELIMINATED) return@update state
+            val cleaned = state.copy(
+                offlinePlayerIds = state.offlinePlayerIds - playerId,
+                skippedVoters = state.skippedVoters - playerId
+            )
 
-            if (state.currentScreen == Screen.Reveal) {
-                val remaining = state.players.filter { it.id != playerId }
-                if (remaining.size < 3) return@update abortGame(state)
-                val base = state.copy(
+            if (cleaned.currentScreen == Screen.Reveal) {
+                val remaining = cleaned.players.filter { it.id != playerId }
+                if (remaining.size < 3) {
+                    return@update abortGame(cleaned, Protocol.CANCEL_NOT_ENOUGH_PLAYERS)
+                }
+                val base = cleaned.copy(
                     players = remaining,
-                    revealAcks = state.revealAcks - playerId
+                    revealAcks = cleaned.revealAcks - playerId
                 )
                 if (base.revealAcks.size >= base.players.size) startCluePhase(base) else base
             } else {
-                val updatedPlayers = state.players.map { p ->
+                val updatedPlayers = cleaned.players.map { p ->
                     if (p.id == playerId) p.copy(status = PlayerStatus.ELIMINATED) else p
                 }
                 val remainingActive = updatedPlayers.count { it.status == PlayerStatus.ACTIVE }
-                if (remainingActive < 3) return@update abortGame(state)
-                val base = state.copy(
+                if (remainingActive < 3) {
+                    return@update abortGame(cleaned, Protocol.CANCEL_NOT_ENOUGH_PLAYERS)
+                }
+                val base = cleaned.copy(
                     players = updatedPlayers,
                     votePhase = VotePhase.IDLE,
                     votes = emptyMap(),
                     tiedCandidates = emptySet(),
+                    skippedVoters = emptySet(),
+                    noElimination = null,
                     elimination = EliminationEvent(target.id, target.pseudo, target.role),
                     pendingUnknownGuess = null,
                     currentScreen = Screen.Elimination
@@ -520,19 +658,21 @@ class GameViewModel(
         }
     }
 
-    /** Annule la partie (plus assez de joueurs) et renvoie tout le monde au salon. */
-    private fun abortGame(state: GameUiState): GameUiState {
-        hostSession?.sendCancelled()
+    /** Annule la partie et renvoie tout le monde au salon. */
+    private fun abortGame(state: GameUiState, reason: String): GameUiState {
+        syncedSpectatorIds.clear()
+        hostSession?.sendCancelled(reason)
+        connectionManager.endRoundOnServer()
         hostSession = null
         return GameUiState(categories = state.categories).copy(
             currentScreen = Screen.Multiplayer,
-            hostAborted = true
+            hostAbortReason = reason
         )
     }
 
     /** L'écran a traité le retour au salon après annulation : on remet le signal à zéro. */
     fun acknowledgeAbort() {
-        _uiState.update { it.copy(hostAborted = false) }
+        _uiState.update { it.copy(hostAbortReason = null) }
     }
 
     private fun onGuestReveal(playerId: Int) {
@@ -584,30 +724,58 @@ class GameViewModel(
         return newState
     }
 
-    private fun registerHostVote(state: GameUiState, playerId: Int, targetId: Int): GameUiState {
-        if (state.votePhase == VotePhase.IDLE) return state
-        val expectedVoters = if (state.votePhase == VotePhase.SECOND_ROUND) {
+    private fun expectedVoters(state: GameUiState): Set<Int> {
+        val base = if (state.votePhase == VotePhase.SECOND_ROUND) {
             state.voteOrder.toSet()
         } else {
             activePlayers(state).map { it.id }.toSet()
         }
-        if (playerId !in expectedVoters) return state
+        return base - state.skippedVoters
+    }
+
+    private fun registerHostVote(state: GameUiState, playerId: Int, targetId: Int): GameUiState {
+        if (state.votePhase == VotePhase.IDLE) return state
+        val expected = expectedVoters(state)
+        if (playerId !in expected) return state
         val newVotes = state.votes + (playerId to targetId)
-        return if (newVotes.keys.containsAll(expectedVoters)) {
+        return if (newVotes.keys.containsAll(expected)) {
             resolveRoundHost(state.copy(votes = newVotes))
         } else {
-            state.copy(votes = newVotes)
+            val next = state.copy(votes = newVotes)
+            broadcastBoard(next)
+            next
         }
+    }
+
+    private fun skipEliminationRound(state: GameUiState, reason: NoElimination): GameUiState {
+        val next = startNewClueRound(
+            state.copy(
+                votePhase = VotePhase.IDLE,
+                votes = emptyMap(),
+                tiedCandidates = emptySet(),
+                skippedVoters = emptySet(),
+                elimination = null,
+                noElimination = reason,
+                currentScreen = Screen.GameBoard,
+                turnNumber = state.turnNumber + 1
+            )
+        )
+        broadcastBoard(next)
+        hostSession?.sendPhase(Protocol.PHASE_CLUE)
+        return next
     }
 
     private fun resolveRoundHost(state: GameUiState): GameUiState {
         val resolved = resolveRound(state)
+        // skipEliminationRound a déjà diffusé board + PHASE_CLUE.
+        if (resolved.noElimination != null) return resolved
         broadcastResolved(resolved)
         return resolved
     }
 
     private fun broadcastResolved(state: GameUiState) {
         state.elimination?.let { elimination ->
+            hostSession?.sendPhase(Protocol.PHASE_ELIMINATION)
             hostSession?.sendElimination(
                 playerId = elimination.playerId,
                 pseudo = elimination.pseudo,
@@ -640,12 +808,103 @@ class GameViewModel(
             category = state.wordPair?.category,
             votePhase = state.votePhase,
             currentVoterId = null,
-            tiedCandidates = state.tiedCandidates
+            tiedCandidates = state.tiedCandidates,
+            offlinePlayerIds = state.offlinePlayerIds,
+            votedPlayerIds = votedPlayerIdsOf(state),
+            noElimination = state.noElimination
         )
     }
 
+    private fun isHostRoundScreen(state: GameUiState): Boolean =
+        state.currentScreen == Screen.Reveal ||
+            state.currentScreen == Screen.GameBoard ||
+            state.currentScreen == Screen.Elimination
+
+    private fun notifyRoundOver() {
+        val s = _uiState.value
+        if (!s.multiplayerHost) return
+        val payload = GameProtocol.syncPayload(
+            inRound = false,
+            participating = false,
+            phase = Protocol.PHASE_RESULT
+        )
+        val ids = (s.players.map { it.id } + syncedSpectatorIds)
+            .toSet()
+            .filter { it != Protocol.HOST_PLAYER_ID }
+        ids.forEach { hostSession?.sendSync(it, payload) }
+    }
+
+    private fun currentPhase(state: GameUiState): String = when {
+        state.result != null -> Protocol.PHASE_RESULT
+        state.currentScreen == Screen.Elimination -> Protocol.PHASE_ELIMINATION
+        state.currentScreen == Screen.Reveal -> Protocol.PHASE_REVEAL
+        state.votePhase != VotePhase.IDLE -> Protocol.PHASE_VOTE
+        else -> Protocol.PHASE_CLUE
+    }
+
+    private fun syncAllGuests() {
+        val s = _uiState.value
+        s.players.filter { it.id != Protocol.HOST_PLAYER_ID }.forEach { sendSyncTo(it.id) }
+    }
+
+    private fun sendSyncTo(playerId: Int) {
+        val s = _uiState.value
+        if (!s.multiplayerHost || !isHostRoundScreen(s)) return
+        val participating = s.players.any { it.id == playerId }
+        val player = s.players.find { it.id == playerId }
+        val phase = currentPhase(s)
+        val board = GameProtocol.boardPayload(
+            players = s.players,
+            clueOrder = s.clueOrder,
+            roundNumber = s.roundNumber,
+            turnNumber = s.turnNumber,
+            category = s.wordPair?.category,
+            votePhase = s.votePhase,
+            currentVoterId = null,
+            tiedCandidates = s.tiedCandidates,
+            offlinePlayerIds = s.offlinePlayerIds,
+            votedPlayerIds = votedPlayerIdsOf(s),
+            noElimination = s.noElimination
+        )
+        val elimination = s.elimination?.let {
+            GameProtocol.eliminationPayload(
+                playerId = it.playerId,
+                pseudo = it.pseudo,
+                role = it.role,
+                turnNumber = s.turnNumber,
+                guessResolved = it.guessResolved,
+                guessCorrect = it.guessCorrect,
+                guessText = it.guessText,
+                votes = it.votes
+            )
+        }
+        val result = s.result?.let { GameProtocol.resultPayload(s.players, it, s.totalScores) }
+        val payload = GameProtocol.syncPayload(
+            inRound = true,
+            participating = participating,
+            phase = phase,
+            privateRole = player?.role,
+            privateWord = player?.assignedWord,
+            board = board,
+            revealAcked = s.revealAcks.size,
+            revealTotal = s.players.size,
+            alreadyRevealed = playerId in s.revealAcks,
+            alreadyVoted = s.votes.containsKey(playerId),
+            elimination = if (s.currentScreen == Screen.Elimination) elimination else null,
+            pendingUnknownGuess = s.pendingUnknownGuess != null &&
+                s.currentScreen == Screen.Elimination &&
+                s.elimination?.guessResolved != true,
+            result = result
+        )
+        hostSession?.sendSync(playerId, payload)
+    }
+
+    private fun votedPlayerIdsOf(state: GameUiState): List<Int> =
+        if (state.votePhase == VotePhase.IDLE) emptyList() else state.votes.keys.toList()
+
     fun resetGame() {
         hostSession = null
+        syncedSpectatorIds.clear()
         _uiState.update { state ->
             GameUiState(categories = state.categories)
         }

@@ -1,11 +1,14 @@
 package com.lemytho.app.ui.screens
 
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -16,29 +19,44 @@ import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Masks
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.lemytho.app.R
 import com.lemytho.app.data.model.Player
 import com.lemytho.app.data.model.PlayerStatus
 import com.lemytho.app.data.model.Role
+import com.lemytho.app.ui.NoElimination
 import com.lemytho.app.ui.VotePhase
+import com.lemytho.app.ui.noEliminationHint
+import com.lemytho.app.ui.theme.CitizenCyan
+import com.lemytho.app.ui.theme.ImpostorRed
 
 @Composable
 fun GameBoardScreen(
@@ -53,6 +71,9 @@ fun GameBoardScreen(
     selfVote: Boolean = false,
     selfId: Int? = null,
     hasVoted: Boolean = false,
+    offlinePlayerIds: Set<Int> = emptySet(),
+    votedPlayerIds: Set<Int> = emptySet(),
+    noElimination: NoElimination? = null,
     onStartVote: () -> Unit,
     onCastVote: (Int) -> Unit
 ) {
@@ -109,15 +130,13 @@ fun GameBoardScreen(
 
             val statusText = when {
                 hasVoted -> "Vote enregistré, en attente des autres…"
-                votePhase == VotePhase.IDLE -> "Donnez vos indices dans l'ordre, discutez… puis votez !"
+                votePhase == VotePhase.IDLE ->
+                    noEliminationHint(noElimination)
+                        ?: "Donnez vos indices dans l'ordre, discutez… puis votez !"
                 votePhase == VotePhase.SECOND_ROUND -> "Égalité : re-vote pour départager."
                 else -> "Vote en cours…"
             }
-            ScrimText(
-                text = statusText,
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.Bold
-            )
+            BoardStatusText(text = statusText)
 
             Spacer(Modifier.height(16.dp))
 
@@ -128,7 +147,13 @@ fun GameBoardScreen(
                 modifier = Modifier.weight(1f)
             ) {
                 items(orderedPlayers, key = { it.id }) { player ->
-                    PlayerCard(player, order = rankById[player.id], selfId = selfId)
+                    PlayerCard(
+                        player,
+                        order = rankById[player.id],
+                        selfId = selfId,
+                        offline = player.id in offlinePlayerIds,
+                        hasVoted = votePhase != VotePhase.IDLE && player.id in votedPlayerIds
+                    )
                 }
             }
 
@@ -161,12 +186,19 @@ fun GameBoardScreen(
 }
 
 @Composable
-private fun PlayerCard(player: Player, order: Int? = null, selfId: Int? = null) {
+private fun PlayerCard(
+    player: Player,
+    order: Int? = null,
+    selfId: Int? = null,
+    offline: Boolean = false,
+    hasVoted: Boolean = false
+) {
     val eliminated = player.status == PlayerStatus.ELIMINATED
     val label = buildString {
         if (order != null) append("$order. ")
         append(player.pseudo)
         if (player.id == selfId) append(" (toi)")
+        if (hasVoted) append(" (a voté)")
     }
     Surface(
         modifier = Modifier.fillMaxWidth(),
@@ -178,13 +210,19 @@ private fun PlayerCard(player: Player, order: Int? = null, selfId: Int? = null) 
             modifier = Modifier.padding(16.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            Text(
-                text = label,
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.Bold,
-                color = if (eliminated) MaterialTheme.colorScheme.onSurfaceVariant
-                else MaterialTheme.colorScheme.onSurface
-            )
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                if (selfId != null) {
+                    PresenceDot(connected = !offline)
+                    Spacer(Modifier.width(6.dp))
+                }
+                Text(
+                    text = label,
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold,
+                    color = if (eliminated) MaterialTheme.colorScheme.onSurfaceVariant
+                    else MaterialTheme.colorScheme.onSurface
+                )
+            }
             if (eliminated) {
                 Spacer(Modifier.height(4.dp))
                 Row(verticalAlignment = Alignment.CenterVertically) {
@@ -223,4 +261,135 @@ private fun roleColor(role: Role) = when (role) {
     Role.CITIZEN -> MaterialTheme.colorScheme.primary
     Role.IMPOSTOR -> MaterialTheme.colorScheme.secondary
     Role.UNKNOWN -> MaterialTheme.colorScheme.tertiary
+}
+
+/**
+ * Bandeau hôte : joueurs hors ligne, « Ne plus attendre », « Annuler la manche ».
+ */
+@Composable
+fun HostRoundOverlay(
+    players: List<Player>,
+    offlinePlayerIds: Set<Int>,
+    skippableIds: Set<Int>,
+    onSkipWait: (Int) -> Unit,
+    onCancelRound: () -> Unit,
+    content: @Composable () -> Unit
+) {
+    var skipTarget by remember { mutableStateOf<Player?>(null) }
+    var confirmCancel by remember { mutableStateOf(false) }
+    val skippable = players.filter {
+        it.id in skippableIds && it.status == PlayerStatus.ACTIVE
+    }
+    Column(modifier = Modifier.fillMaxSize()) {
+        if (skippable.isNotEmpty()) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp, vertical = 8.dp)
+            ) {
+                StatusBanner(accent = ImpostorRed) {
+                    Column(
+                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        skippable.forEach { player ->
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                            ) {
+                                Text(
+                                    text = "Hors ligne : ${player.pseudo}",
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    fontWeight = FontWeight.Bold,
+                                    color = Color.White,
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis,
+                                    modifier = Modifier.weight(1f)
+                                )
+                                Button(onClick = { skipTarget = player }) {
+                                    Text("Ne plus attendre")
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        Box(modifier = Modifier.weight(1f)) {
+            content()
+            IconButton(
+                onClick = { confirmCancel = true },
+                modifier = Modifier
+                    .align(Alignment.TopEnd)
+                    .padding(8.dp)
+            ) {
+                Icon(
+                    imageVector = Icons.Filled.Close,
+                    contentDescription = "Annuler la manche",
+                    tint = Color.White
+                )
+            }
+        }
+    }
+    skipTarget?.let { player ->
+        AlertDialog(
+            onDismissRequest = { skipTarget = null },
+            title = { Text("Ne plus attendre ?") },
+            text = {
+                Text("La table n'attendra plus ${player.pseudo} pour cette étape.")
+            },
+            confirmButton = {
+                TextButton(onClick = {
+                    onSkipWait(player.id)
+                    skipTarget = null
+                }) { Text("Confirmer") }
+            },
+            dismissButton = {
+                TextButton(onClick = { skipTarget = null }) { Text("Annuler") }
+            }
+        )
+    }
+    if (confirmCancel) {
+        AlertDialog(
+            onDismissRequest = { confirmCancel = false },
+            title = { Text("Annuler la manche ?") },
+            text = {
+                Text("Retour au salon. Les scores de cette manche ne seront pas comptés. Le salon reste ouvert.")
+            },
+            confirmButton = {
+                TextButton(onClick = {
+                    confirmCancel = false
+                    onCancelRound()
+                }) { Text("Annuler la manche") }
+            },
+            dismissButton = {
+                TextButton(onClick = { confirmCancel = false }) { Text("Revenir") }
+            }
+        )
+    }
+}
+
+@Composable
+fun StatusBanner(
+    accent: Color = CitizenCyan,
+    content: @Composable () -> Unit
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(IntrinsicSize.Min)
+            .clip(RoundedCornerShape(12.dp))
+            .background(Color.Black.copy(alpha = 0.85f))
+    ) {
+        Box(
+            modifier = Modifier
+                .width(4.dp)
+                .fillMaxHeight()
+                .background(accent)
+        )
+        Box(modifier = Modifier.weight(1f)) {
+            content()
+        }
+    }
 }

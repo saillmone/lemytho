@@ -58,7 +58,22 @@ data class MultiplayerUiState(
 
     // Manche en cours : l'invité participe-t-il à la manche actuelle ?
     val inRound: Boolean = false,
+    val participating: Boolean = false,
+
+    /** Ids des sièges de la manche en cours (suffixe « en jeu »). */
+    val roundPlayerIds: Set<Int> = emptySet(),
 
     // L'invité a demandé à rejouer (en attente de la relance de l'hôte).
-    val wantsReplay: Boolean = false
+    val wantsReplay: Boolean = false,
+
+    /** En attente du premier game:sync après une reprise. */
+    val awaitingSync: Boolean = false,
+
+    /** Hôte hors ligne pendant une manche (invités). */
+    val hostPaused: Boolean = false,
+
+    /** Incrémenté quand le siège hôte est repris (GameViewModel sync / cancel). */
+    val hostSeatResumedTick: Int = 0,
+    /** Manche encore ouverte côté serveur au moment de la reprise hôte. */
+    val hostResumeInRound: Boolean = false
 )
